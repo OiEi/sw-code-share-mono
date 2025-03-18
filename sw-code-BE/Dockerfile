@@ -12,7 +12,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod vendor -o out/app
 # Все что выше можно унести в jenkins pipeline
 FROM alpine:latest
 
-EXPOSE 8080
+# EXPOSE 8080
 
 WORKDIR /app
 

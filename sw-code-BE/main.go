@@ -11,7 +11,7 @@ import (
 	"syscall"
 )
 
-const port = ":8080"
+const port = ":80"
 
 func main() {
 	mux := http.NewServeMux()
@@ -24,9 +24,9 @@ func main() {
 		fmt.Println("Файл index.html не найден!")
 	}
 
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "index.html") // отправляем клиенту HTML файл
-	})
+	// mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	// 	http.ServeFile(w, r, "index.html") // отправляем клиенту HTML файл
+	// })
 
 	server := http.Server{
 		Addr:    port,

@@ -1,33 +1,26 @@
+# Используем официальный образ Node.js на основе Alpine Linux
+FROM node:20-alpine
 
-FROM node:18-alpine as build
+# Устанавливаем pnpm глобально
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
+# Устанавливаем рабочую директорию
 WORKDIR /app
 
-# Копируем файлы зависимостей
-COPY package.json package-lock.json ./
+# Копируем package.json и pnpm-lock.yaml
+COPY package.json ./
 
-# Устанавливаем зависимости
-RUN npm ci
+# Устанавливаем зависимости с помощью pnpm
+RUN pnpm install
 
-# Копируем исходный код
+# Копируем исходный код проекта
 COPY . .
 
-# Собираем проект
-RUN npm run build
+# Собираем проект (опционально, если нужно для production)
+RUN pnpm run build
 
-# # Этап 2: настройка nginx для раздачи статических файлов
-# FROM nginx:alpine
+# Открываем порт, который использует Vite (по умолчанию 5173)
+EXPOSE 5173
 
-# # Копируем собранные файлы из предыдущего этапа
-# COPY --from=build /app/dist /usr/share/nginx/html
-
-# # Копируем нашу nginx конфигурацию
-# COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Открываем порт
-EXPOSE 3000
-
-CMD ["vite"]
-
-# Запускаем nginx
-# CMD ["nginx", "-g", "daemon off;"]
+# Запускаем Vite в режиме разработки или превью
+CMD ["pnpm", "run", "dev"]
