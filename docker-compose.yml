@@ -20,6 +20,8 @@ services:
       - "3000:3000"  # Отображаем 3000 порт локально и внутри контейнера
     networks:
       - app-network
+    depends_on:
+      - backend
       
   nginx:
     image: nginx:latest
@@ -30,6 +32,9 @@ services:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro  # Монтируем наш nginx.conf
     networks:
       - app-network
+    depends_on: 
+      - frontend
+    
 
 networks:
   app-network:
