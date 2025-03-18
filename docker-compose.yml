@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3.3'
 
 services:
   backend:
@@ -29,7 +29,7 @@ services:
     ports:
       - "80:80"  # Nginx доступен на 80 порту
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro  # Монтируем наш nginx.conf
+      - ./nginx.conf:/etc/nginx/nginx.conf  # Монтируем наш nginx.conf
     networks:
       - app-network
     depends_on: 
