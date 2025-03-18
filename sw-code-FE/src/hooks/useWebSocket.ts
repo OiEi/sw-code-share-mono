@@ -6,6 +6,7 @@ type WebSocketStatus = 'connecting' | 'connected' | 'disconnected' | 'error';
 interface WebSocketMessage {
   type: string;
   content: string;
+  roomId?: string;
 }
 
 export const useWebSocket = (url: string) => {
@@ -39,8 +40,6 @@ export const useWebSocket = (url: string) => {
       wsConnection.onmessage = (event) => {
         console.log('Получено сообщение:', event.data);
         try {
-          // Обработка сообщений в зависимости от их формата
-          // Пробуем распарсить JSON, если это не текст
           try {
             const parsedData = JSON.parse(event.data);
             if (parsedData.type === 'text_update') {
@@ -50,7 +49,6 @@ export const useWebSocket = (url: string) => {
               console.log('Получено сообщение другого типа:', parsedData);
             }
           } catch (e) {
-            // Если не JSON, то обрабатываем как обычный текст
             setCurrentText(event.data);
             setMessages(prev => [...prev, event.data]);
           }

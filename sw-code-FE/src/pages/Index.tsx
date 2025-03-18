@@ -18,7 +18,7 @@ const Index = () => {
     // Получаем хост без порта
     const host = window.location.hostname;
     // Формируем URL с явным указанием порта 8080
-    const dynamicWsUrl = `ws://${host}:8080/ws?roomId=${roomId}`;
+    const dynamicWsUrl = `ws://backend/ws?roomId=${roomId}`;
     setWebsocketUrl(dynamicWsUrl);
   }, [roomId]);
   

@@ -3,7 +3,8 @@ version: '3.8'
 services:
   backend:
     build:
-      context: ./backend
+      context: sw-code-BE
+      dockerfile: Dockerfile
     container_name: backend
     ports:
       - "8080:8080"  # Отображаем 8080 порт локально и внутри контейнера
@@ -12,7 +13,8 @@ services:
 
   frontend:
     build:
-      context: ./frontend
+      context: sw-code-FE
+      dockerfile: Dockerfile
     container_name: frontend
     ports:
       - "3000:3000"  # Отображаем 3000 порт локально и внутри контейнера
@@ -31,4 +33,4 @@ services:
 
 networks:
   app-network:
-    external: true  # Используем внешнюю сеть
+    driver: bridge
