@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Shared Editor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        textarea {
+            width: 50%;
+            height: 500px;
+            font-size: 16px;
+        }
+
+        .header {
+            display: flex;
+            align-items: center; /* Центрируем по вертикали */
+            justify-content: space-between; /* Заголовок слева, кнопка справа */
+            margin-bottom: 20px; /* Отступ от поля редактирования */
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin: 0; /* Сброс внешних отступов */
+        }
+
+        .copy-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        .copy-button:hover {
+            background-color: #0056b3; /* Темнее при наведении */
+        }
+    </style>
+</head>
+<body>
+<!-- Контейнер для заголовка и кнопки -->
+<div class="header">
+    <h1>Shared Text Editor</h1>
+    <!-- Кнопка копирования -->
+    <button id="copyButton" class="copy-button" style="display: none;">Copy Room URL</button>
+</div>
+
+<textarea id="editor" placeholder="Start typing..."></textarea>
+
+<script>
+    // Подключаемся к WebSocket-серверу
+    const roomId = new URLSearchParams(window.location.search).get('roomId');
+    const ws = new WebSocket(`ws://${window.location.host}/ws?roomId=${roomId || ''}`);
+
+    const editor = document.getElementById('editor');
+    const copyButton = document.getElementById('copyButton');
+    let isTyping = false;
+    let currentRoomId = roomId;
+
+    // Отправляем данные на сервер при изменении текста
+    editor.addEventListener('input', () => {
+        if (!isTyping) {
+            ws.send(JSON.stringify({ text: editor.value }));
+        }
+    });
+
+    // Обрабатываем входящие сообщения с сервера
+    ws.addEventListener('message', (event) => {
+        let data;
+
+        try {
+            // Пытаемся разобрать данные как JSON
+            data = JSON.parse(event.data);
+        } catch (error) {
+            console.error('Ошибка при парсинге данных:', error);
+            console.log('Получено сообщение, которое не является JSON:', event.data);
+            return
+        }
+
+        console.log('Получено сообщение:', data);
+
+        // Если сервер вернул roomId, обновляем текущий идентификатор и кнопку копирования
+        if (typeof data === 'object' && data !== null && data.roomId && !roomId) {
+            currentRoomId = data.roomId;
+            const roomUrl = `${window.location.origin}?roomId=${currentRoomId}`;
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                copyButton.style.display = 'inline-block';
+                copyButton.onclick = () => {
+                    navigator.clipboard.writeText(roomUrl).then(() => {
+                        alert('Room URL copied to clipboard!');
+                    }).catch(err => {
+                        console.error('Failed to copy text: ', err);
+                        alert('Failed to copy room URL. Please copy it manually.');
+                    });
+                };
+            } else {
+                console.warn('Clipboard API not supported');
+                // Альтернативное решение для копирования текста
+                copyButton.style.display = 'inline-block';
+                copyButton.onclick = () => {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = roomUrl;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        alert('Room URL copied to clipboard!');
+                    } catch (err) {
+                        console.error('Failed to copy text: ', err);
+                        alert('Failed to copy room URL. Please copy it manually.');
+                    }
+                    document.body.removeChild(textArea);
+                };
+            }
+        }
+
+        isTyping = true;
+        editor.value = data.text; // Обновляем текстовое поле
+        isTyping = false;
+    });
+
+    // Логируем открытие соединения
+    ws.addEventListener('open', () => {
+        console.log('Connected to WebSocket server');
+    });
+
+    // Логируем ошибки
+    ws.addEventListener('error', (err) => {
+        console.error('WebSocket error:', err);
+    });
+
+    // Логируем разрыв соединения
+    ws.addEventListener('close', () => {
+        console.log('WebSocket connection closed');
+    });
+</script>
+</body>
+</html>
