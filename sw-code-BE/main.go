@@ -11,7 +11,7 @@ import (
 	"syscall"
 )
 
-const port = ":80"
+const port = ":8080"
 
 func main() {
 	mux := http.NewServeMux()
@@ -27,6 +27,12 @@ func main() {
 	// mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 	// 	http.ServeFile(w, r, "index.html") // отправляем клиенту HTML файл
 	// })
+
+	
+	mux.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("pong")) // отправляем клиенту HTML файл
+		return
+	})
 
 	server := http.Server{
 		Addr:    port,
