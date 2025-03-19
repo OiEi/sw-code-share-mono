@@ -9,7 +9,7 @@ interface WebSocketMessage {
   roomId?: string;
 }
 
-export const useWebSocket = (url: string) => {
+export const useWebSocket = (url: string, setRoomId: (roomId: string) => void) => {
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [status, setStatus] = useState<WebSocketStatus>('disconnected');
   const [messages, setMessages] = useState<string[]>([]);
@@ -42,10 +42,14 @@ export const useWebSocket = (url: string) => {
         try {
           try {
             const parsedData = JSON.parse(event.data);
-            if (parsedData.type === 'text_update') {
+            if (parsedData.Type === 'text_update') {
               setCurrentText(parsedData.content);
               setMessages(prev => [...prev, parsedData.content]);
-            } else {
+            } else if(parsedData.Type === 'room-created') {
+              console.log('Комната создана:', parsedData);
+              setRoomId(parsedData.roomId); 
+            }
+            else {
               console.log('Получено сообщение другого типа:', parsedData);
             }
           } catch (e) {

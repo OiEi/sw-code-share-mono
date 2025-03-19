@@ -11,10 +11,11 @@ import { AlertCircle, Wifi, WifiOff, RefreshCw } from 'lucide-react';
 interface SharedTextEditorProps {
   websocketUrl: string;
   roomId?: string;
+  setRoomId: (newRoomId: string) => void;
 }
 
-const SharedTextEditor: React.FC<SharedTextEditorProps> = ({ websocketUrl, roomId }) => {
-  const { status, currentText, sendMessage, reconnect } = useWebSocket(websocketUrl);
+const SharedTextEditor: React.FC<SharedTextEditorProps> = ({ websocketUrl, roomId, setRoomId }) => {
+  const { status, currentText, sendMessage, reconnect } = useWebSocket(websocketUrl, setRoomId);
   const [localText, setLocalText] = useState<string>('');
   const [isSending, setIsSending] = useState(false);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);

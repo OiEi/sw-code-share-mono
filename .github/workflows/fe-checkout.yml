@@ -1,0 +1,39 @@
+name: fe-checkout
+
+on:
+  push:
+    branches:
+      - main 
+  pull_request:
+    branches:
+      - main  
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest 
+
+    strategy:
+      matrix:
+        node-version: [18, 20] 
+        os: [ubuntu-latest, alpine]  
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'  
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+        working-directory: ./fe  
+
+      - name: Run lint
+        run: pnpm lint
+        working-directory: ./fe 

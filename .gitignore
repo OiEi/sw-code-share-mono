@@ -1,3 +1,6 @@
 .idea
 .DS_store
 *.exe
+
+sw-code-FE/node_modules/
+sw-code-FE/*-lock.yaml
