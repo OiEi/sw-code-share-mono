@@ -26,10 +26,8 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Enable corepack and activate pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@latest --activate
+      - name: Install pnpm
+        run: npm install -g pnpm
 
       - name: Install Alpine dependencies
         if: matrix.os == 'alpine'
