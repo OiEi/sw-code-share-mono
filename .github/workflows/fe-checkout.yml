@@ -3,19 +3,19 @@ name: fe-checkout
 on:
   push:
     branches:
-      - main 
+      - main  
   pull_request:
     branches:
-      - main  
+      - main 
 
 jobs:
   lint:
-    runs-on: ubuntu-latest 
+    runs-on: ${{ matrix.os }} 
 
     strategy:
       matrix:
         node-version: [18, 20] 
-        os: [ubuntu-latest, alpine]  
+        os: [ubuntu-latest] 
 
     steps:
       - name: Checkout repository
@@ -25,15 +25,21 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'pnpm'  
 
-      - name: Install pnpm
-        run: npm install -g pnpm
+      - name: Enable corepack and activate pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
+
+      - name: Install Alpine dependencies
+        if: matrix.os == 'alpine'
+        run: |
+          apk add --no-cache curl bash
 
       - name: Install dependencies
         run: pnpm install
-        working-directory: ./fe  
+        working-directory: ./sw-code-FE 
 
       - name: Run lint
         run: pnpm lint
-        working-directory: ./fe 
+        working-directory: ./sw-code-FE  
