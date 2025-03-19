@@ -112,13 +112,27 @@ const Index = () => {
 const CopyButton = ({ textToCopy }) => {
   const [isCopied, setIsCopied] = useState(false);
 
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(textToCopy);
+  const handleCopy = () => {
+    // Создаем временный textarea для копирования текста
+    const textarea = document.createElement('textarea');
+    textarea.value = textToCopy;
+    textarea.setAttribute('readonly', ''); // Делаем textarea readonly
+    textarea.style.position = 'absolute';
+    textarea.style.left = '-9999px'; // Выносим за пределы экрана
+    document.body.appendChild(textarea);
+
+    // Выделяем текст и копируем его
+    textarea.select();
+    const success = document.execCommand('copy');
+
+    // Удаляем textarea
+    document.body.removeChild(textarea);
+
+    if (success) {
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000); // Сброс состояния через 2 секунды
-    } catch (err) {
-      console.error('Не удалось скопировать текст: ', err);
+    } else {
+      console.error('Не удалось скопировать текст');
     }
   };
 

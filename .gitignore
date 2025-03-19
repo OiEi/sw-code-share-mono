@@ -4,3 +4,5 @@
 
 sw-code-FE/node_modules/
 sw-code-FE/*-lock.yaml
+
+sw-code-BE/vendor/
