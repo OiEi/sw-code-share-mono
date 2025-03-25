@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
@@ -8,35 +7,30 @@ import { useSearchParams } from 'react-router-dom';
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [roomId, setRoomId] = useState<string>('');
-
+  // Получаем roomId из URL параметров
+  const initialRoomId = searchParams.get('roomId') || '';
+  const [roomId, setRoomId] = useState<string>(initialRoomId);
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [websocketUrl, setWebsocketUrl] = useState<string>('');
 
+  // Обновляем URL при изменении roomId
   useEffect(() => {
     const newSearchParams = new URLSearchParams(searchParams);
-    newSearchParams.set('roomId', roomId)
+    if (roomId) {
+      newSearchParams.set('roomId', roomId);
+    } else {
+      newSearchParams.delete('roomId');
+    }
     setSearchParams(newSearchParams);
-  }, [roomId, searchParams, setSearchParams])
+  }, [roomId, searchParams, setSearchParams]);
 
-  // Формируем URL для WebSocket, используя порт 8080 для бэкенда
+  // Формируем URL для WebSocket
   useEffect(() => {
-    // Получаем хост без порта
     const host = window.location.hostname;
-    // Формируем URL с явным указанием порта 8080
-    const dynamicWsUrl = `ws://${host}/api/ws?roomId=${roomId}`;
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const dynamicWsUrl = `${wsProtocol}//${host}/api/ws?roomId=${roomId || ''}`;
     setWebsocketUrl(dynamicWsUrl);
   }, [roomId]);
-
-  const renderCopyButton = () => (
-    <Button
-      size="sm"
-      className="text-xs h-8"
-      onClick={() => { }}
-    >
-
-    </Button>
-  )
 
   const handleConnect = () => {
     if (!websocketUrl) {
@@ -71,11 +65,16 @@ const Index = () => {
         {!isConnected ? (
           <div className="bg-white p-6 rounded-lg shadow-md mb-6">
             <h2 className="text-xl font-semibold mb-4">Подключение к комнате</h2>
-
+            
             <div className="mb-4">
-              <p className="text-sm text-gray-600 mb-2">Комната: <span className="font-medium">{roomId || 'общая комната'}</span></p>
-              <p className="text-sm text-gray-600">WebSocket URL: <span className="font-medium">{`http://${window.location.hostname}?roomId=${roomId}`}</span></p>
-              <CopyButton textToCopy={'aaa'} />
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Идентификатор комнаты
+              </label>
+              <Input
+                value={roomId}
+                onChange={(e) => setRoomId(e.target.value)}
+                placeholder="Введите ID комнаты или оставьте пустым для общей комнаты"
+              />
             </div>
 
             <div className="flex justify-end">
@@ -88,9 +87,8 @@ const Index = () => {
           <div className="mb-6 flex justify-between items-center bg-white p-4 rounded-lg shadow-sm">
             <div>
               <p className="text-sm text-gray-600">Комната: <span className="font-medium">{roomId || 'общая комната'}</span></p>
-              <p className="text-sm text-gray-600">WebSocket URL: <span className="font-medium">{`http://${window.location.hostname}?roomId=${roomId}`}</span></p>
-              <CopyButton textToCopy={`http://${window.location.hostname}?roomId=${roomId}`} />
-
+              <p className="text-sm text-gray-600">WebSocket URL: <span className="font-medium">{websocketUrl}</span></p>
+              <CopyButton textToCopy={websocketUrl} />
             </div>
             <Button
               variant="outline"
@@ -102,48 +100,41 @@ const Index = () => {
         )}
 
         {isConnected && (
-          <SharedTextEditor websocketUrl={websocketUrl} roomId={roomId} setRoomId={(v: string) => setRoomId(v)} />
+          <SharedTextEditor 
+            websocketUrl={websocketUrl} 
+            roomId={roomId} 
+            setRoomId={setRoomId} 
+          />
         )}
       </div>
     </div>
   );
 };
 
-const CopyButton = ({ textToCopy }) => {
+const CopyButton = ({ textToCopy }: { textToCopy: string }) => {
   const [isCopied, setIsCopied] = useState(false);
 
   const handleCopy = () => {
-    // Создаем временный textarea для копирования текста
-    const textarea = document.createElement('textarea');
-    textarea.value = textToCopy;
-    textarea.setAttribute('readonly', ''); // Делаем textarea readonly
-    textarea.style.position = 'absolute';
-    textarea.style.left = '-9999px'; // Выносим за пределы экрана
-    document.body.appendChild(textarea);
-
-    // Выделяем текст и копируем его
-    textarea.select();
-    const success = document.execCommand('copy');
-
-    // Удаляем textarea
-    document.body.removeChild(textarea);
-
-    if (success) {
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000); // Сброс состояния через 2 секунды
-    } else {
-      console.error('Не удалось скопировать текст');
-    }
+    navigator.clipboard.writeText(textToCopy)
+      .then(() => {
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+      })
+      .catch(() => {
+        console.error('Не удалось скопировать текст');
+      });
   };
 
   return (
-    <div>
-      <button onClick={handleCopy}>
-        {isCopied ? 'Скопировано!' : 'Копировать'}
-      </button>
-    </div>
+    <Button
+      size="sm"
+      variant="outline"
+      onClick={handleCopy}
+      className="mt-2"
+    >
+      {isCopied ? 'Скопировано!' : 'Копировать URL'}
+    </Button>
   );
 };
 
 export default Index;
-

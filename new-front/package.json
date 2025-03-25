@@ -1,0 +1,28 @@
+{
+  "name": "new-front",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@rsbuild/core": "^1.2.19",
+    "@rsbuild/plugin-solid": "^1.0.5",
+    "@swc/core": "^1.11.13",
+    "@swc/helpers": "^0.5.15",
+    "@types/bun": "latest",
+    "@types/node": "^22.13.13",
+    "tailwindcss": "^3"
+  },
+  "peerDependencies": {
+    "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "@solidjs/router": "^0.15.3",
+    "solid-js": "^1.9.5"
+  },
+  "scripts": {
+    "dev": "rsbuild dev",
+    "build": "rsbuild build",
+    "serve": "bun run --bun rsbuild serve",
+    "type-check": "tsc --noEmit"
+  }
+}
