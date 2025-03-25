@@ -28,9 +28,8 @@ func main() {
 	// 	http.ServeFile(w, r, "index.html") // отправляем клиенту HTML файл
 	// })
 
-	
 	mux.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("pong")) // отправляем клиенту HTML файл
+		w.Write([]byte("pong"))
 		return
 	})
 
