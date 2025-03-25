@@ -3,6 +3,7 @@ package services
 import (
 	"fmt"
 	"github.com/google/uuid"
+	"log"
 	"sync"
 )
 
@@ -25,6 +26,7 @@ type Room struct {
 
 func GetRoom(roomId string) (*Room, error) {
 	if len(roomId) == 0 {
+		log.Println("roomId is empty, create a new room")
 		return createRoom(), nil
 	}
 
