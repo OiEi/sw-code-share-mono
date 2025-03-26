@@ -7,11 +7,11 @@ import { useSearchParams } from 'react-router-dom';
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  // Получаем roomId из URL параметров
   const initialRoomId = searchParams.get('roomId') || '';
   const [roomId, setRoomId] = useState<string>(initialRoomId);
-  const [isConnected, setIsConnected] = useState<boolean>(false);
   const [websocketUrl, setWebsocketUrl] = useState<string>('');
+  const [link, setLink] = useState<string>('');
+  const [isConnected, setIsConnected] = useState<boolean>(false);
 
   // Обновляем URL при изменении roomId
   useEffect(() => {
@@ -24,30 +24,16 @@ const Index = () => {
     setSearchParams(newSearchParams);
   }, [roomId, searchParams, setSearchParams]);
 
-  // Формируем URL для WebSocket
+  // Формируем URL для WebSocket один раз при монтировании
   useEffect(() => {
-    const host = window.location.hostname;
+    const host = window.location.host;
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const dynamicWsUrl = `${wsProtocol}//${host}/api/ws?roomId=${roomId || ''}`;
+    const dynamicWsUrlWOProtocol = `${host}/api/ws?roomId=${roomId}`;
+    const dynamicWsUrl = `${wsProtocol}//${dynamicWsUrlWOProtocol}`;
+    const dynamicHttpUrl = `${window.location.protocol}//${host}?roomId=${roomId}`;
     setWebsocketUrl(dynamicWsUrl);
+    setLink(dynamicHttpUrl);
   }, [roomId]);
-
-  const handleConnect = () => {
-    if (!websocketUrl) {
-      toast({
-        title: "Ошибка",
-        description: "Не удалось сформировать WebSocket URL",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsConnected(true);
-    toast({
-      title: "Подключение",
-      description: `Подключение к комнате: ${roomId || 'общая комната'}`,
-    });
-  };
 
   const handleDisconnect = () => {
     setIsConnected(false);
@@ -60,52 +46,29 @@ const Index = () => {
   return (
     <div className="min-h-screen p-6 bg-gray-50">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-center mb-8">Rusky Lingo Buddy - Совместное редактирование</h1>
-
-        {!isConnected ? (
-          <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-            <h2 className="text-xl font-semibold mb-4">Подключение к комнате</h2>
-            
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Идентификатор комнаты
-              </label>
-              <Input
-                value={roomId}
-                onChange={(e) => setRoomId(e.target.value)}
-                placeholder="Введите ID комнаты или оставьте пустым для общей комнаты"
-              />
-            </div>
-
-            <div className="flex justify-end">
-              <Button onClick={handleConnect}>
-                Подключиться
-              </Button>
-            </div>
+        <h1 className="text-3xl font-bold text-center mb-8">НЕ Rusky Lingo Buddy - Совместное редактирование</h1>
+        
+        <div className="mb-6 flex justify-between items-center bg-white p-4 rounded-lg shadow-sm">
+          <div>
+            <p className="text-sm text-gray-600">Комната: <span className="font-medium">{roomId || 'общая комната'}</span></p>
+            <p className="text-sm text-gray-600">WebSocket URL: <span className="font-medium">{websocketUrl}</span></p>
+            <CopyButton textToCopy={link} />
           </div>
-        ) : (
-          <div className="mb-6 flex justify-between items-center bg-white p-4 rounded-lg shadow-sm">
-            <div>
-              <p className="text-sm text-gray-600">Комната: <span className="font-medium">{roomId || 'общая комната'}</span></p>
-              <p className="text-sm text-gray-600">WebSocket URL: <span className="font-medium">{websocketUrl}</span></p>
-              <CopyButton textToCopy={websocketUrl} />
-            </div>
-            <Button
-              variant="outline"
-              onClick={handleDisconnect}
-            >
-              Отключиться
-            </Button>
-          </div>
-        )}
+          <Button
+            variant="outline"
+            onClick={handleDisconnect}
+            disabled={!isConnected}
+          >
+            Отключиться
+          </Button>
+        </div>
 
-        {isConnected && (
-          <SharedTextEditor 
-            websocketUrl={websocketUrl} 
-            roomId={roomId} 
-            setRoomId={setRoomId} 
-          />
-        )}
+        <SharedTextEditor 
+          websocketUrl={websocketUrl} 
+          roomId={roomId}
+          onConnectionChange={setIsConnected}
+          setRoomId={(roomId: string) => setRoomId(roomId)}
+        />
       </div>
     </div>
   );
@@ -115,14 +78,40 @@ const CopyButton = ({ textToCopy }: { textToCopy: string }) => {
   const [isCopied, setIsCopied] = useState(false);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(textToCopy)
-      .then(() => {
-        setIsCopied(true);
-        setTimeout(() => setIsCopied(false), 2000);
-      })
-      .catch(() => {
-        console.error('Не удалось скопировать текст');
-      });
+    // Fallback для HTTP
+    const fallbackCopy = () => {
+      const textarea = document.createElement('textarea');
+      textarea.value = textToCopy;
+      textarea.style.position = 'fixed'; // Чтобы не было прокрутки страницы
+      document.body.appendChild(textarea);
+      textarea.select();
+      
+      try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+          setIsCopied(true);
+          setTimeout(() => setIsCopied(false), 2000);
+        } else {
+          console.error('Не удалось скопировать текст');
+        }
+      } catch (err) {
+        console.error('Ошибка при копировании:', err);
+      } finally {
+        document.body.removeChild(textarea);
+      }
+    };
+
+    // Пытаемся использовать modern API, если доступно
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(textToCopy)
+        .then(() => {
+          setIsCopied(true);
+          setTimeout(() => setIsCopied(false), 2000);
+        })
+        .catch(fallbackCopy);
+    } else {
+      fallbackCopy();
+    }
   };
 
   return (
