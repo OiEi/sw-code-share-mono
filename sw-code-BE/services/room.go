@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"github.com/google/uuid"
 	"log"
@@ -24,10 +25,10 @@ type Room struct {
 	ContentMux sync.RWMutex //бездумно прекрыл жёпу, по факту на 1 экземпляр Room крутится 1 рутинка, так что рейса не должно быть
 }
 
-func GetRoom(roomId string) (*Room, error) {
+func GetRoom(ctx context.Context, roomId string) (*Room, error) {
 	if len(roomId) == 0 {
 		log.Println("roomId is empty, create a new room")
-		return createRoom(), nil
+		return createRoom(ctx), nil
 	}
 
 	roomsMutex.Lock()
@@ -41,7 +42,7 @@ func GetRoom(roomId string) (*Room, error) {
 	return room, nil
 }
 
-func createRoom() *Room {
+func createRoom(ctx context.Context) *Room {
 	roomID := uuid.New().String()
 	room := Room{
 		Id:         roomID,
@@ -55,20 +56,26 @@ func createRoom() *Room {
 	rooms[roomID] = &room
 	roomsMutex.Unlock()
 
-	go room.start() // рутина отработает когда комната опустеет
+	go room.start(ctx) // рутина отработает когда комната опустеет (или по котексту)
 	return &room
 }
 
-func (room *Room) start() {
+func (room *Room) start(ctx context.Context) {
 	for {
 		select {
+		case <-ctx.Done():
+			fmt.Printf("room %s lifetime exeeded", room.Id)
+			return
+
 		case user := <-room.Register:
 			room.Users[user] = struct{}{}
+
 		case user := <-room.Unregister:
 			if _, ok := room.Users[user]; ok {
 				delete(room.Users, user)
-				close(user.Send)
+				close(user.IncomingMessages)
 			}
+
 		case message := <-room.Broadcast:
 			//обновляем контент комнаты для отображения текущего состояния комнаты новым пользователям
 			room.ContentMux.Lock()
@@ -76,7 +83,7 @@ func (room *Room) start() {
 			room.ContentMux.Unlock()
 
 			for user := range room.Users {
-				user.Send <- message
+				user.IncomingMessages <- message
 			}
 		}
 

@@ -1,11 +1,18 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"net/http"
 	"sw-code-interview/services"
+	"time"
+)
+
+const (
+	_roomLifetime = 2*time.Hour + 30*time.Minute
+	_userLifetime = 2 * time.Hour
 )
 
 var Upgrader = websocket.Upgrader{
@@ -17,7 +24,10 @@ func WsHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		roomId := r.URL.Query().Get("roomId")
 
-		room, err := services.GetRoom(roomId)
+		roomCtx, cancelRoom := context.WithTimeout(context.TODO(), _roomLifetime)
+		defer cancelRoom()
+
+		room, err := services.GetRoom(roomCtx, roomId)
 		if err != nil {
 			fmt.Printf("не удалось получить комнату для roomId %s\n", roomId)
 			http.Error(w, err.Error(), http.StatusNotFound)
@@ -34,14 +44,17 @@ func WsHandler() func(http.ResponseWriter, *http.Request) {
 		clientId := uuid.New().String()
 
 		defer func() {
-			err := conn.Close()
+			err = conn.Close()
 			if err != nil {
 				fmt.Println("не удалось закрыть websocket")
 			}
 			fmt.Printf("websocket соединение клиента %s закрыто\n", clientId)
 		}()
 
-		services.HandleUser(room, conn, clientId)
+		userLifeTimeCtx, cancel := context.WithTimeout(roomCtx, _userLifetime)
+		defer cancel()
+
+		services.HandleUser(userLifeTimeCtx, room, conn, clientId)
 	}
 }
 

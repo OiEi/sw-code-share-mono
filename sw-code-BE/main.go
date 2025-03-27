@@ -7,45 +7,24 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"sw-code-interview/api/handlers"
+	"sw-code-interview/api"
 	"syscall"
 )
 
 const port = ":8080"
 
 func main() {
-	mux := http.NewServeMux()
 
-	//скрипт в index.html дергает этот роут
-	mux.HandleFunc("/ws", handlers.WsHandler()) //регистрируем WebSocket
-
-	_, err := os.Stat("index.html")
-	if os.IsNotExist(err) {
-		fmt.Println("Файл index.html не найден!")
-	}
-
-	// mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-	// 	http.ServeFile(w, r, "index.html") // отправляем клиенту HTML файл
-	// })
-
-	mux.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("pong"))
-		return
-	})
-
-	server := http.Server{
-		Addr:    port,
-		Handler: mux,
-	}
+	server := api.NewServer(port)
 
 	fmt.Printf("сервер слушает на порту %s... \n", port)
 
-	err = server.ListenAndServe()
+	err := server.ListenAndServe()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	waitTerminate(&server)
+	waitTerminate(server)
 }
 
 func waitTerminate(server *http.Server) {

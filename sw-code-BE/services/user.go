@@ -1,82 +1,100 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"github.com/gorilla/websocket"
 	"log"
 )
 
 type User struct {
-	Id     string
-	RoomID string //в текущей реализации не нужно)
-	Socket *websocket.Conn
-	Send   chan string // канал для отправки сообщений, можно сделать буферизированным, но в текущих реалиях нафих не надо
+	Id               string
+	RoomID           string //not using
+	Socket           *websocket.Conn
+	IncomingMessages chan string // channel for messages from room to client
 }
 
-func HandleUser(room *Room, conn *websocket.Conn, clientID string) {
-	client := User{
-		Id:     clientID,
-		RoomID: room.Id,
-		Socket: conn,
-		Send:   make(chan string),
+func HandleUser(ctx context.Context, room *Room, conn *websocket.Conn, clientID string) {
+	user := User{
+		Id:               clientID,
+		RoomID:           room.Id,
+		Socket:           conn,
+		IncomingMessages: make(chan string),
 	}
 
-	room.Register <- client
+	room.Register <- user
 
-	//Делегируем закрытие conn и client.Send клиента room
-	//можно еще подстраховаться и тут conn закрыть
+	//room will close conn and client.IncomingMessages after room.Unregister <- client
 	defer func() {
-		room.Unregister <- client
+		room.Unregister <- user
 	}()
 
-	// Уведомляем пользователя о создании комнаты для формирования ссылки
-	// В текущей реализации index.html ссылку для шаринга показываем только тому кто создал комнату
+	err := user.sendRoomIdMessage(room.Id)
+	if err != nil {
+		log.Println("failed to send room-created message:", err)
+		return
+	}
+
+	user.subscribeToBroadcast()
+
+	//sending current room.Content to new User
+	user.IncomingMessages <- room.Content
+
+	//read messages from User and push it to Broadcast
+	for {
+		select {
+		case <-ctx.Done():
+			fmt.Printf("user %s life time exceeded.\n", user.Id)
+			return
+		default:
+			_, msg, err := conn.ReadMessage()
+			if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
+				fmt.Printf("user %s closed the connection: %s\n", clientID, err)
+				return
+			}
+
+			if err != nil {
+				fmt.Printf("err conn.ReadMessage() from user %s: - %s\n", clientID, err)
+				return
+			}
+
+			fmt.Printf("message received for room %s for user %s: - %s\n", room.Id, clientID, string(msg))
+
+			room.Broadcast <- string(msg)
+		}
+	}
+}
+
+func (u *User) sendRoomIdMessage(roomId string) error {
+	//sending room.Id to new User for room sharing
 	response := struct {
 		Type   string //пока не нужно
 		RoomId string `json:"roomId"`
 	}{
 		Type:   "room-created",
-		RoomId: room.Id,
+		RoomId: roomId,
 	}
 
-	if err := conn.WriteJSON(response); err != nil {
-		log.Println("не удалось отправить room-created message:", err)
-		return
+	if err := u.Socket.WriteJSON(response); err != nil {
+		return fmt.Errorf("failed to send room-created message: %w", err)
 	}
 
-	//Подписка на broadcast что-бы получать сообщения от других клиентов
+	return nil
+}
+
+// subscribeToBroadcast subscribe to broadcast to receive messages
+func (u *User) subscribeToBroadcast() {
 	go func() {
-		//room закроет client.Send по room.Unregister <- client
-		for msg := range client.Send {
+		//room will close this after room.Unregister <- client
+		for msg := range u.IncomingMessages {
 			if len(msg) == 0 {
 				continue
 			}
 
-			err := conn.WriteMessage(websocket.TextMessage, []byte(msg))
+			err := u.Socket.WriteMessage(websocket.TextMessage, []byte(msg))
 			if err != nil {
-				fmt.Println("не удалось отправить сообщение: %s, клиенту %s: , - %s\n", msg, client.Id, err.Error())
+				fmt.Printf("failed to send: %s, to client %s: , - %s\n\n", msg, u.Id, err.Error())
 			}
 		}
 	}()
-
-	//Пушим новому клиенту состояние room на момент подключения
-	client.Send <- room.Content
-
-	//Читаем входящие сообщения от клиента и пушим их в broadcast для всех клиентов комнаты
-	for {
-		_, msg, err := conn.ReadMessage()
-		if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
-			fmt.Printf("клиент %s закрыл соединение: %s\n", clientID, err)
-			return
-		}
-
-		if err != nil {
-			fmt.Printf("ошибка чтения от клиента %s: - %s\n", clientID, err)
-			return
-		}
-
-		fmt.Printf("получено сообщение для комнаты %s от клиента %s: - %s\n", room.Id, clientID, string(msg))
-
-		room.Broadcast <- string(msg)
-	}
 }
