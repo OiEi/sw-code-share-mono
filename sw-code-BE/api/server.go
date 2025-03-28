@@ -12,7 +12,7 @@ func NewServer(port string) *http.Server {
 	mux.HandleFunc("/ws", handlers.WsHandler())
 
 	mux.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("pong"))
+		w.Write([]byte("pong, pong"))
 		return
 	})
 
