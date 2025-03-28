@@ -19,8 +19,7 @@ COPY . .
 # Собираем проект (опционально, если нужно для production)
 RUN pnpm run build
 
-# Открываем порт, который использует Vite (по умолчанию 5173)
-EXPOSE 5173
+EXPOSE 3000
 
 # Запускаем Vite в режиме разработки или превью
-CMD ["pnpm", "run", "dev"]
+CMD ["pnpm", "run", "preview"]
