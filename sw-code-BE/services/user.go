@@ -44,21 +44,21 @@ func HandleUser(ctx context.Context, room *Room, conn *websocket.Conn, clientID 
 	for {
 		select {
 		case <-ctx.Done():
-			fmt.Printf("user %s life time exceeded.\n", user.Id)
+			log.Printf("user %s life time exceeded.\n", user.Id)
 			return
 		default:
 			_, msg, err := conn.ReadMessage()
 			if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
-				fmt.Printf("user %s closed the connection: %s\n", clientID, err)
+				log.Printf("user %s closed the connection: %s\n", clientID, err)
 				return
 			}
 
 			if err != nil {
-				fmt.Printf("err conn.ReadMessage() from user %s: - %s\n", clientID, err)
+				log.Printf("err conn.ReadMessage() from user %s: - %s\n", clientID, err)
 				return
 			}
 
-			fmt.Printf("message received for room %s for user %s: - %s\n", room.Id, clientID, string(msg))
+			log.Printf("message received from room %s for user %s: - %s\n", room.Id, clientID, string(msg))
 
 			room.Broadcast <- string(msg)
 		}
@@ -93,7 +93,7 @@ func (u *User) subscribeToBroadcast() {
 
 			err := u.Socket.WriteMessage(websocket.TextMessage, []byte(msg))
 			if err != nil {
-				fmt.Printf("failed to send: %s, to client %s: , - %s\n\n", msg, u.Id, err.Error())
+				log.Printf("failed to send: %s, to client %s: , - %s\n\n", msg, u.Id, err.Error())
 			}
 		}
 	}()
