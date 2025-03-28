@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
-	"log"
+	"log/slog"
 	"sync"
 )
 
@@ -25,9 +25,9 @@ type Room struct {
 	ContentMux sync.RWMutex //бездумно прекрыл жёпу, по факту на 1 экземпляр Room крутится 1 рутинка, так что рейса не должно быть
 }
 
-func GetRoom(ctx context.Context, roomId string) (*Room, error) {
+func GetRoom(ctx context.Context, logger *slog.Logger, roomId string) (*Room, error) {
 	if len(roomId) == 0 {
-		log.Println("roomId is empty, create a new room")
+		logger.Info("roomId is empty, create a new room")
 		return createRoom(ctx), nil
 	}
 
