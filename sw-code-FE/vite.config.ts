@@ -7,8 +7,12 @@ import { componentTagger } from "lovable-tagger";
 export default defineConfig(({ mode }) => ({
   server: {
     allowedHosts: ['code-interview.smartway.today'],
-    host: "::",
+    host: "0.0.0.0",
     port: 3000,
+    strictPort: true, 
+    hmr: {
+      host: "code-interview.smartway.today" 
+    },
   },
   plugins: [
     react(),
