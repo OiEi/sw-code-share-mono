@@ -16,6 +16,8 @@ func NewServer(port string) *http.Server {
 		return
 	})
 
+	mux.HandleFunc("/task", handlers.TasksHandler())
+
 	//_, err := os.Stat("index.html")
 	//if os.IsNotExist(err) {
 	//	fmt.Println("Файл index.html не найден!")
