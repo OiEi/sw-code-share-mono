@@ -22,4 +22,4 @@ RUN pnpm run build
 EXPOSE 3000
 
 # Запускаем Vite в режиме разработки или превью
-CMD ["pnpm", "run", "preview"]
+CMD ["pnpm", "run", "preview", "--port", "3000"]
