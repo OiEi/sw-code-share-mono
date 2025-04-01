@@ -19,7 +19,13 @@ type Tasks map[string][]Task
 
 func GetTasks() Tasks {
 	tasks := make(map[string][]Task)
-	dirs, err := os.ReadDir("./services/task/tasks")
+
+	tasksPath := os.Getenv("TASKS_PATH")
+	if tasksPath == "" {
+		tasksPath = "./tasks" // путь по умолчанию в контейнере
+	}
+
+	dirs, err := os.ReadDir(tasksPath)
 	if err != nil {
 		fmt.Printf("Error reading tasks directory: %v\n", err)
 		return tasks
@@ -31,7 +37,7 @@ func GetTasks() Tasks {
 		}
 
 		dirName := dir.Name()
-		dirPath := filepath.Join("./services/task/tasks", dirName)
+		dirPath := filepath.Join(tasksPath, dirName)
 
 		//read from subd
 		files, err := os.ReadDir(dirPath)

@@ -23,7 +23,9 @@ WORKDIR /app
 COPY --from=build /build/out ./
 COPY --from=build /build/index.html ./
 COPY --from=build /build/services/task/tasks ./tasks/
+ENV TASKS_PATH=/app/tasks
 
 RUN chmod +x ./app
+
 
 ENTRYPOINT ./app
