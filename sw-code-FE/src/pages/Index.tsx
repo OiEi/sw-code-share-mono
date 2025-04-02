@@ -28,6 +28,23 @@ const Index = () => {
         window.location.host
     }${window.location.pathname}?roomId=${roomIdForCopy.current}`;
 
+    const renderCopyButton = () => {
+        if (!roomIdForCopy) {
+            return null;
+        }
+
+        return (
+            <Button
+                size="sm"
+                variant="outline"
+                onClick={() => navigator.clipboard.writeText(currentUrl)}
+            >
+                <CopyIcon className="mr-2 h-4 w-4" />
+                Copy link
+            </Button>
+        )
+    }
+
     return (
         <div className="min-h-screen px-6 bg-gray-200">
             <div className="max-w-full mx-auto">
@@ -38,14 +55,7 @@ const Index = () => {
                             alt="Smartway Logo"
                             className="h-8 w-auto"
                         />
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => navigator.clipboard.writeText(currentUrl)}
-                        >
-                            <CopyIcon className="mr-2 h-4 w-4" />
-                            Copy link
-                        </Button>
+                        {renderCopyButton()}
                     </div>
                 </div>
 
