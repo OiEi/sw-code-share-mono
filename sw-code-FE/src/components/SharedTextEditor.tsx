@@ -1,107 +1,166 @@
-import {useState, useEffect, useRef} from 'react';
+import {useState, useEffect, useRef, useCallback} from 'react';
+import Editor from "react-simple-code-editor";
+import Prism from 'prismjs';
+import 'prismjs/components/prism-clike';
+import 'prismjs/components/prism-javascript';
+import 'prismjs/themes/prism.css';
+import 'prismjs/components/prism-go'; // Golang
+import 'prismjs/components/prism-csharp'; // C#
+import {SimpleSelect} from "@/components/ui/select/ui.tsx";
 
 interface SharedTextEditorProps {
     websocketUrl: string;
-    roomId: string;
+    initialRoomId: string;
+    setRoomIdForCopy: (newRoomId: string) => void;
     onConnectionChange: (connected: boolean) => void;
-    setRoomId: (roomId: string) => void;
 }
 
 const SharedTextEditor = ({
                               websocketUrl,
-                              roomId,
+                              initialRoomId,
+                              setRoomIdForCopy,
                               onConnectionChange,
-                              setRoomId
                           }: SharedTextEditorProps) => {
     const [text, setText] = useState('');
+    const [currentRoomId, setCurrentRoomId] = useState(initialRoomId);
     const socketRef = useRef<WebSocket | null>(null);
+    const pingIntervalRef = useRef<number | null>(null);
+    const isMountedRef = useRef(false);
+    const [language, setLanguage] = useState('go');
 
-    useEffect(() => {
-        if (!websocketUrl) return;
+    const languages = [
+        {value: "js", label: "JavaScript"},
+        {value: "go", label: "Golang"},
+        {value: "csharp", label: "C#"},
+    ];
 
-        socketRef.current = new WebSocket(websocketUrl);
+    // Функция подключения к WebSocket
+    const connectWebSocket = useCallback(() => {
+        if (!websocketUrl || !isMountedRef.current) return;
 
-        socketRef.current.onopen = () => {
-            console.log('WebSocket подключен');
+        console.log('Connecting to WebSocket:', websocketUrl);
+        const socket = new WebSocket(websocketUrl);
+        socketRef.current = socket;
+
+        socket.onopen = () => {
+            console.log('WebSocket connected');
             onConnectionChange(true);
 
-            // Отправляем информацию о комнате при подключении
-            socketRef.current?.send(JSON.stringify({
-                type: 'join_room',
-                roomId
-            }));
+            // Настраиваем пинг
+            pingIntervalRef.current = setInterval(() => {
+                if (socket.readyState === WebSocket.OPEN) {
+                    socket.send(JSON.stringify({type: 'ping'}));
+                }
+            }, 25000);
         };
 
-        socketRef.current.onmessage = (event) => {
+        socket.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
+                console.log('Received message:', data);
+
                 if (data.type === 'text_update') {
                     setText(data.content);
                 }
+
                 if (data.Type === 'room-created') {
-                    setRoomId(data.roomId);
+                    setRoomIdForCopy(data.roomId)
                 }
             } catch (err) {
-                console.error('Ошибка парсинга сообщения:', err);
+                console.error('Error parsing message:', err);
             }
         };
 
-        socketRef.current.onclose = () => {
-            console.log('WebSocket отключен');
+        socket.onclose = () => {
+            console.log('WebSocket disconnected');
             onConnectionChange(false);
+            if (pingIntervalRef.current) {
+                clearInterval(pingIntervalRef.current);
+            }
+            // Пытаемся переподключиться через 1 секунду
+            setTimeout(connectWebSocket, 1000);
         };
 
-        socketRef.current.onerror = (error) => {
+        socket.onerror = (error) => {
             console.error('WebSocket error:', error);
-            onConnectionChange(false);
         };
 
         return () => {
-            if (socketRef.current?.readyState === WebSocket.OPEN) {
-                socketRef.current.close();
+            if (socket.readyState === WebSocket.OPEN) {
+                socket.close(1000, 'Component unmounting');
             }
         };
-    }, [websocketUrl, roomId, onConnectionChange]);
+    }, [websocketUrl, onConnectionChange]);
 
-    const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        const newText = e.target.value;
-        setText(newText);
+    // Инициализация подключения
+    useEffect(() => {
+        isMountedRef.current = true;
+        connectWebSocket();
 
+        return () => {
+            isMountedRef.current = false;
+            if (socketRef.current?.readyState === WebSocket.OPEN) {
+                socketRef.current.close(1000, 'Component unmounting');
+            }
+            if (pingIntervalRef.current) {
+                clearInterval(pingIntervalRef.current);
+            }
+        };
+    }, [connectWebSocket]);
+
+    // Отправка обновлений текста
+    const sendTextUpdate = useCallback((newText: string) => {
         if (socketRef.current?.readyState === WebSocket.OPEN) {
             socketRef.current.send(JSON.stringify({
                 type: 'text_update',
-                roomId,
+                roomId: currentRoomId,
                 content: newText
             }));
+        }
+    }, [currentRoomId]);
+
+    const handleTextChange = (text: string) => {
+        // const newText = e.target.value;
+        setText(text);
+        sendTextUpdate(text);
+    };
+
+
+    const highlightCode = (code: string) => {
+        switch (language) {
+            case 'go':
+                return Prism.highlight(code, Prism.languages.go, 'go');
+            case 'csharp':
+                return Prism.highlight(code, Prism.languages.csharp, 'csharp');
+            case 'javascript':
+            default:
+                return Prism.highlight(code, Prism.languages.javascript, 'javascript');
         }
     };
 
     return (
         <div className="bg-white rounded-xl border border-gray-200 h-max">
-            <textarea
-                value={text}
-                onChange={handleTextChange}
-                className="w-full h-96 p-3 text-xs leading-snug font-mono border border-gray-200 rounded-lg
-              focus:ring-1 focus:ring-gray-500 focus:border-gray-500
-              hover:border-gray-300 transition-colors duration-200
-              resize-none bg-white text-gray-800 focus:outline-none"
-                // className="w-full h-96 p-3 text-xs leading-snug font-mono border border-gray-50 rounded-lg focus:ring-amber-600 focus:border-gray-100 hover:border-gray-300 resize-none bg-gray-50 text-gray-800"
-                placeholder="// Put your code..."
-                spellCheck="false"
+            <SimpleSelect
+                options={languages}
+                defaultValue={language}
+                onChange={(value) => setLanguage(value)}
             />
-
-            <div className="p-2 text-xs text-gray-500 flex justify-between items-center">
-                <div>
-                    <span className="mr-1">Room ID:</span>
-                    <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded">{roomId || 'не указан'}</span>
-                </div>
-                <div className="flex items-center space-x-1.5">
-                    <div className={`h-2 w-2 rounded-full ${socketRef.current?.readyState === WebSocket.OPEN ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                    <span className="text-xs text-gray-500">{socketRef.current?.readyState === WebSocket.OPEN ? 'connected' : 'not connected'}</span>
-                </div>
-            </div>
+            <Editor
+                className="h-96 overflow-scroll bg-gray-50 rounded-lg"
+                value={text}
+                onValueChange={code => handleTextChange(code)}
+                highlight={highlightCode}
+                padding={10}
+                style={{
+                    fontFamily: '"Fira code", "Fira Mono", monospace',
+                    fontSize: 12,
+                    backgroundColor: 'transparent',
+                }}
+                textareaClassName="focus:outline-none focus:ring-0 border-0 overflow-scroll"
+                preClassName="border-0 focus:outline-none"
+            />
         </div>
     );
 };
 
-export default SharedTextEditor;
+export default SharedTextEditor
