@@ -57,13 +57,12 @@ const SharedTextEditor = ({
         socket.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
-                console.log('Received message:', data);
 
                 if (data.type === 'text_update') {
                     setText(data.content);
                 }
 
-                if (data.type === 'room-created') {
+                if (['room-updated', 'room-created'].includes(data.type)) {
                     setRoomIdForCopy(data.roomId)
                 }
             } catch (err) {
