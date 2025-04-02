@@ -24,12 +24,12 @@ const Index = () => {
 
     }, []);
 
-    // const websocketUrl = `${
-    //     window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    // }//code-interview.smartway.today/api/ws?roomId=${currentRoomId || ''}`;
     const websocketUrl = `${
         window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    }//192.168.0.20:4000/api/ws?roomId=${currentRoomId || ''}`;
+    }//code-interview.smartway.today/api/ws?roomId=${currentRoomId || ''}`;
+    // const websocketUrl = `${
+    //     window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    // }//192.168.0.20:4000/api/ws?roomId=${currentRoomId || ''}`;
 
     const currentUrl = `${window.location.protocol}//${
         window.location.host
