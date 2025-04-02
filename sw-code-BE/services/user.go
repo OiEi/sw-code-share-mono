@@ -9,14 +9,16 @@ import (
 
 type User struct {
 	Id               string
-	RoomID           string //not using
-	Socket           *websocket.Conn
-	IncomingMessages chan string // channel for messages from room to client
+	IsMaster         bool
+	RoomID           string          //not using
+	Socket           *websocket.Conn // all messages for Socket translate to room.Broadcast
+	IncomingMessages chan string     // channel for messages from room(all users) to client
 }
 
-func HandleUser(ctx context.Context, room *Room, conn *websocket.Conn, clientID string) {
+func HandleUser(ctx context.Context, room *Room, conn *websocket.Conn, clientID string, isMaster bool) {
 	user := User{
 		Id:               clientID,
+		IsMaster:         isMaster,
 		RoomID:           room.Id,
 		Socket:           conn,
 		IncomingMessages: make(chan string),
@@ -29,10 +31,12 @@ func HandleUser(ctx context.Context, room *Room, conn *websocket.Conn, clientID 
 		room.Unregister <- user
 	}()
 
-	err := user.sendRoomIdMessage(room.Id)
-	if err != nil {
-		log.Println("failed to send room-created message:", err)
-		return
+	if isMaster {
+		err := user.sendRoomIdMessage(room.Id, "room-created")
+		if err != nil {
+			log.Println("failed to send room-created message:", err)
+			return
+		}
 	}
 
 	user.subscribeToBroadcast()
@@ -47,7 +51,7 @@ func HandleUser(ctx context.Context, room *Room, conn *websocket.Conn, clientID 
 			log.Printf("user %s life time exceeded.\n", user.Id)
 			return
 		default:
-			_, msg, err := conn.ReadMessage()
+			_, msg, err := user.Socket.ReadMessage()
 			if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
 				log.Printf("user %s closed the connection: %s\n", clientID, err)
 				return
@@ -65,17 +69,17 @@ func HandleUser(ctx context.Context, room *Room, conn *websocket.Conn, clientID 
 	}
 }
 
-func (u *User) sendRoomIdMessage(roomId string) error {
+func (u *User) sendRoomIdMessage(roomId string, messageType string) error {
 	//sending room.Id to new User for room sharing
-	response := struct {
-		Type   string //пока не нужно
+	request := struct {
+		Type   string `json:"type"`
 		RoomId string `json:"roomId"`
 	}{
-		Type:   "room-created",
+		Type:   messageType,
 		RoomId: roomId,
 	}
 
-	if err := u.Socket.WriteJSON(response); err != nil {
+	if err := u.Socket.WriteJSON(request); err != nil {
 		return fmt.Errorf("failed to send room-created message: %w", err)
 	}
 

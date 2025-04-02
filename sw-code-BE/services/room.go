@@ -25,10 +25,10 @@ type Room struct {
 	ContentMux sync.RWMutex //бездумно прекрыл жёпу, по факту на 1 экземпляр Room крутится 1 рутинка, так что рейса не должно быть
 }
 
-func GetRoom(ctx context.Context, roomId string) (*Room, error) {
+func GetRoom(ctx context.Context, roomId string) (*Room, bool, error) {
 	if len(roomId) == 0 {
 		log.Println("roomId is empty, create a new room")
-		return createRoom(ctx), nil
+		return createRoom(ctx), true, nil
 	}
 
 	roomsMutex.Lock()
@@ -36,10 +36,10 @@ func GetRoom(ctx context.Context, roomId string) (*Room, error) {
 	roomsMutex.Unlock()
 
 	if !ok {
-		return nil, fmt.Errorf("комната с Id %s не найдена", roomId)
+		return nil, false, fmt.Errorf("комната с Id %s не найдена", roomId)
 	}
 
-	return room, nil
+	return room, false, nil
 }
 
 func createRoom(ctx context.Context) *Room {
@@ -70,6 +70,11 @@ func (room *Room) start(ctx context.Context) {
 		case user := <-room.Register:
 			room.Users[user] = struct{}{}
 
+			if !user.IsMaster {
+				//инвалидируем ссылку что бы новый клиент не мог её пошарить кому-то, новый id пушим создателю комнаты
+				room.invalidateRoomId()
+			}
+
 		case user := <-room.Unregister:
 			if _, ok := room.Users[user]; ok {
 				delete(room.Users, user)
@@ -89,6 +94,22 @@ func (room *Room) start(ctx context.Context) {
 
 		if len(room.Users) == 0 {
 			return
+		}
+	}
+}
+
+func (room *Room) invalidateRoomId() {
+	newRoomId := uuid.New().String()
+	log.Printf("для комнаты %s создан новый id %s", room.Id, newRoomId)
+
+	roomsMutex.Lock()
+	rooms[newRoomId] = room
+	delete(rooms, room.Id)
+	roomsMutex.Unlock()
+
+	for u := range room.Users {
+		if u.IsMaster {
+			u.sendRoomIdMessage(newRoomId, "room-updated") //TODO error
 		}
 	}
 }

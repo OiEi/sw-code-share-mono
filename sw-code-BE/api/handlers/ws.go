@@ -27,7 +27,7 @@ func WsHandler() func(http.ResponseWriter, *http.Request) {
 		roomCtx, cancelRoom := context.WithTimeout(context.TODO(), _roomLifetime)
 		defer cancelRoom()
 
-		room, err := services.GetRoom(roomCtx, roomId)
+		room, isNewRoom, err := services.GetRoom(roomCtx, roomId)
 		if err != nil {
 			fmt.Printf("не удалось получить комнату для roomId %s\n", roomId)
 			http.Error(w, err.Error(), http.StatusNotFound)
@@ -54,7 +54,7 @@ func WsHandler() func(http.ResponseWriter, *http.Request) {
 		userLifeTimeCtx, cancel := context.WithTimeout(roomCtx, _userLifetime)
 		defer cancel()
 
-		services.HandleUser(userLifeTimeCtx, room, conn, clientId)
+		services.HandleUser(userLifeTimeCtx, room, conn, clientId, isNewRoom)
 	}
 }
 
