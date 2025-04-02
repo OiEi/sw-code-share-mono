@@ -63,7 +63,7 @@ const SharedTextEditor = ({
                     setText(data.content);
                 }
 
-                if (data.Type === 'room-created') {
+                if (data.type === 'room-created') {
                     setRoomIdForCopy(data.roomId)
                 }
             } catch (err) {
@@ -108,7 +108,6 @@ const SharedTextEditor = ({
         };
     }, [connectWebSocket]);
 
-    // Отправка обновлений текста
     const sendTextUpdate = useCallback((newText: string) => {
         if (socketRef.current?.readyState === WebSocket.OPEN) {
             socketRef.current.send(JSON.stringify({
