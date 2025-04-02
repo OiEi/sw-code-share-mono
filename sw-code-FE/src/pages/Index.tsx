@@ -1,7 +1,7 @@
 import {useState, useEffect, useRef} from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { CopyIcon } from 'lucide-react';
+import {useSearchParams} from 'react-router-dom';
+import {Button} from '@/components/ui/button';
+import {CopyIcon} from 'lucide-react';
 import SharedTextEditor from '@/components/SharedTextEditor';
 
 const Index = () => {
@@ -24,12 +24,8 @@ const Index = () => {
         window.location.protocol === 'https:' ? 'wss:' : 'ws:'
     }//code-interview.smartway.today/api/ws?roomId=${currentRoomId || ''}`;
 
-    const currentUrl = `${window.location.protocol}//${
-        window.location.host
-    }${window.location.pathname}?roomId=${roomIdForCopy.current}`;
-
     const renderCopyButton = () => {
-        if (!roomIdForCopy) {
+        if (!roomIdForCopy.current) {
             return null;
         }
 
@@ -37,9 +33,13 @@ const Index = () => {
             <Button
                 size="sm"
                 variant="outline"
-                onClick={() => navigator.clipboard.writeText(currentUrl)}
+                onClick={
+                    () => navigator.clipboard.writeText(
+                        `${window.location.protocol}//${window.location.host}${window.location.pathname}?roomId=${roomIdForCopy.current}`
+                    )
+                }
             >
-                <CopyIcon className="mr-2 h-4 w-4" />
+                <CopyIcon className="mr-2 h-4 w-4"/>
                 Copy link
             </Button>
         )
@@ -64,7 +64,9 @@ const Index = () => {
                     initialRoomId={currentRoomId}
                     onRoomIdChange={setCurrentRoomId}
                     onConnectionChange={setIsConnected}
-                 setRoomIdForCopy={(id: string) => { roomIdForCopy.current = id }}/>
+                    setRoomIdForCopy={(id: string) => {
+                        roomIdForCopy.current = id
+                    }}/>
             </div>
         </div>
     );
