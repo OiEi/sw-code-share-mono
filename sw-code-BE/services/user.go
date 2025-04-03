@@ -24,6 +24,8 @@ func HandleUser(ctx context.Context, room *Room, conn *websocket.Conn, clientID 
 		IncomingMessages: make(chan string),
 	}
 
+	user.subscribeToBroadcast()
+
 	room.Register <- user
 
 	//room will close conn and client.IncomingMessages after room.Unregister <- client
@@ -44,8 +46,6 @@ func HandleUser(ctx context.Context, room *Room, conn *websocket.Conn, clientID 
 		log.Println("failed to send room-created message:", err)
 		return
 	}
-
-	user.subscribeToBroadcast()
 
 	//sending current room.Content to new User
 	user.IncomingMessages <- room.Content

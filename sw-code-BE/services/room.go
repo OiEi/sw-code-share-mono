@@ -49,7 +49,7 @@ func createRoom(ctx context.Context) *Room {
 	room := Room{
 		Id:         roomID,
 		Users:      make(map[User]struct{}),
-		Broadcast:  make(chan string),
+		Broadcast:  make(chan string, 2),
 		Register:   make(chan User),
 		Unregister: make(chan User),
 	}
@@ -83,7 +83,6 @@ func (room *Room) start(ctx context.Context) {
 			}
 
 			room.Broadcast <- string(jsonBytes)
-			room.Broadcast <- "1"
 
 			//if !user.IsMaster {
 			//	//инвалидируем ссылку что бы новый клиент не мог её пошарить кому-то, новый id пушим создателю комнаты
