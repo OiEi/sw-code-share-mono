@@ -25,7 +25,15 @@ func WsHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		roomId := r.URL.Query().Get("roomId")
 
-		log.Println(r.Host, r.Header.Get("User-Agent"), r.Form, r.Proto, r.UserAgent(), r.Referer())
+		log.Println("RemoteAddr:", r.RemoteAddr)
+		log.Println("X-Forwarded-For:", r.Header.Get("X-Forwarded-For"))
+		log.Println("X-Real-IP:", r.Header.Get("X-Real-IP"))
+		log.Println("Origin:", r.Header.Get("Origin"))
+
+		log.Println("Sec-WebSocket-Key:", r.Header.Get("Sec-WebSocket-Key"))
+		log.Println("Sec-WebSocket-Version:", r.Header.Get("Sec-WebSocket-Version"))
+		log.Println("Cookies:", r.Cookies())
+		log.Println("All headers:", r.Header)
 
 		//TODO выпили когда нибудь когда он умрет
 		if roomId == "b4655d58-21ae-4e6e-aee0-ab830142a654" {
