@@ -23,6 +23,7 @@ func HandleUser(ctx context.Context, room *Room, conn *websocket.Conn, clientID 
 		IsMaster:         isMaster,
 		RoomID:           room.Id,
 		Socket:           conn,
+		SocketMutex:      &sync.Mutex{},
 		IncomingMessages: make(chan string),
 	}
 
