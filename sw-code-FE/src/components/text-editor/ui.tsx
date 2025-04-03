@@ -113,7 +113,7 @@ const SharedTextEditor = ({
     };
 
     return (
-        <div className="bg-white border rounded-2xl border-gray-200 h-[calc(100vh-8rem)]">
+        <div className="bg-white border rounded-2xl pb-6 border-gray-200 h-[calc(100vh-8rem)]">
             <ToolBar
                 currentTheme={currentTheme}
                 pageSettings={pageSettings}
