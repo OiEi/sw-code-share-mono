@@ -8,7 +8,7 @@ const Index = () => {
     const initialRoomId = searchParams.get('roomId') || '';
     const [currentRoomId, setCurrentRoomId] = useState(initialRoomId);
     const [, setIsConnected] = useState(false);
-    const peopleCount = useRef<number>(0)
+    const [peopleCount, setPeopleCount] = useState(0)
 
     const roomIdForCopy = useRef('')
 
@@ -46,7 +46,7 @@ const Index = () => {
 
     const renderPeopleCount = () => <div className={'flex gap-4 text-green-600 font-bold'}>
         <PeopleIcon />
-        {peopleCount.current}
+        {peopleCount}
     </div>
 
     return (
@@ -72,9 +72,7 @@ const Index = () => {
                     setRoomIdForCopy={(id: string) => {
                         roomIdForCopy.current = id
                     }}
-                    setPeopleCount={(count: number) => {
-                        peopleCount.current = count;
-                    }}
+                    setPeopleCount={count => { setPeopleCount(count) }}
                 />
             </div>
         </div>
