@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => ({
     port: 3000,
     strictPort: true,
     hmr: {
-      host: "code-interview.smartway.today"
+      // host: "code-interview.smartway.today"
     },
   },
   plugins: [

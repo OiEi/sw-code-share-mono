@@ -1,8 +1,7 @@
 import {useState, useEffect, useRef} from 'react';
 import {useSearchParams} from 'react-router-dom';
-import {Button} from '@/components/ui/button';
 import {CopyIcon} from 'lucide-react';
-import SharedTextEditor from '@/components/SharedTextEditor';
+import SharedTextEditor from "@/components/text-editor/ui.tsx";
 
 const Index = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -30,9 +29,8 @@ const Index = () => {
         }
 
         return (
-            <Button
-                size="sm"
-                variant="outline"
+            <button
+                className={'w-fit flex items-center'}
                 onClick={
                     () => navigator.clipboard.writeText(
                         `${window.location.protocol}//${window.location.host}${window.location.pathname}?roomId=${roomIdForCopy.current}`
@@ -41,14 +39,14 @@ const Index = () => {
             >
                 <CopyIcon className="mr-2 h-4 w-4"/>
                 Copy link
-            </Button>
+            </button>
         )
     }
 
     return (
         <div className="min-h-screen px-6 bg-gray-200">
-            <div className="max-w-full mx-auto">
-                <div className="mb-4 flex justify-between items-center bg-white px-4 py-2 rounded-lg">
+            <div className="max-w-full mx-auto pb-6">
+                <div className="mb-4 flex justify-between items-center bg-white px-4 py-4 rounded-b-xl">
                     <div className='w-full flex justify-between gap-2 items-center'>
                         <img
                             src="/smartwaylogo.svg"
@@ -61,8 +59,6 @@ const Index = () => {
 
                 <SharedTextEditor
                     websocketUrl={websocketUrl}
-                    initialRoomId={currentRoomId}
-                    onRoomIdChange={setCurrentRoomId}
                     onConnectionChange={setIsConnected}
                     setRoomIdForCopy={(id: string) => {
                         roomIdForCopy.current = id

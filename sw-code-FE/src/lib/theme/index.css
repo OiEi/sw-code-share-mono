@@ -1,0 +1,57 @@
+.prism-cutemiya .token.comment,
+.prism-cutemiya .token.prolog,
+.prism-cutemiya .token.doctype,
+.prism-cutemiya .token.cdata {
+    color: #586e75;
+}
+
+.token.operator,
+.token.punctuation {
+    background: none;
+}
+
+.prism-cutemiya .token.operator,
+.prism-cutemiya .token.punctuation {
+    background: none;
+    color: #9a6e3a;
+}
+
+.prism-cutemiya .token.comment,
+.prism-cutemiya .token.prolog,
+.prism-cutemiya .token.doctype,
+.prism-cutemiya .token.cdata {
+    color: #93a1a1;
+}
+
+.prism-cutemiya .token.keyword,
+.prism-cutemiya .token.boolean,
+.prism-cutemiya .token.important {
+    color: #cb4b16;
+}
+
+.prism-cutemiya .token.string,
+.prism-cutemiya .token.url,
+.prism-cutemiya .token.regex {
+    color: #2aa198;
+}
+
+.prism-cutemiya .token.function,
+.prism-cutemiya .token.function-name {
+    color: #268bd2;
+}
+
+.prism-cutemiya .token.method {
+    color: #b58900;
+}
+
+.prism-cutemiya .token.class-name {
+    color: #b58900;
+}
+
+.prism-cutemiya .token.property {
+    color: #2aa198;
+}
+
+.prism-cutemiya .token.operator.arrow {
+    color: #cb4b16;
+}

@@ -3,86 +3,66 @@ import Editor from "react-simple-code-editor";
 import Prism from 'prismjs';
 import 'prismjs/components/prism-clike';
 import 'prismjs/components/prism-javascript';
+
 import 'prismjs/themes/prism.css';
-import 'prismjs/components/prism-go'; // Golang
-import 'prismjs/components/prism-csharp'; // C#
-import {SimpleSelect} from "@/components/ui/select/ui.tsx";
+import 'prismjs/themes/prism-tomorrow.css';
+
+import 'prismjs/components/prism-go';
+import 'prismjs/components/prism-csharp';
+
+import '@/lib/theme/index.css'
+
+import {ToolBar} from "@/components/toolbar/ui.tsx";
+
+import {onClose, onError, onMessage, onOpen} from "@/components/text-editor/socket.ts";
+
+import {Theme} from "@/lib/theme/theme.type.ts";
+import {PageSettings} from "@/components/toolbar/page-settings.ts";
+
+import {themes} from "@/lib/theme/theme.ts";
 
 interface SharedTextEditorProps {
     websocketUrl: string;
-    initialRoomId: string;
     setRoomIdForCopy: (newRoomId: string) => void;
     onConnectionChange: (connected: boolean) => void;
 }
 
 const SharedTextEditor = ({
                               websocketUrl,
-                              initialRoomId,
                               setRoomIdForCopy,
                               onConnectionChange,
                           }: SharedTextEditorProps) => {
     const [text, setText] = useState('');
-    const [currentRoomId, setCurrentRoomId] = useState(initialRoomId);
     const socketRef = useRef<WebSocket | null>(null);
     const pingIntervalRef = useRef<number | null>(null);
     const isMountedRef = useRef(false);
-    const [language, setLanguage] = useState('go');
 
-    const languages = [
-        {value: "js", label: "JavaScript"},
-        {value: "go", label: "Golang"},
-        {value: "csharp", label: "C#"},
-    ];
+    const [currentTheme, setCurrentTheme] = useState<Theme>(themes[0]);
 
-    // Функция подключения к WebSocket
-    const connectWebSocket = useCallback(() => {
+    const [pageSettings, setPageSettings] = useState<PageSettings>({
+        language: 'go',
+        font: '12'
+    });
+
+    const handleConnectWebSocket = useCallback(() => {
         if (!websocketUrl || !isMountedRef.current) return;
 
         console.log('Connecting to WebSocket:', websocketUrl);
         const socket = new WebSocket(websocketUrl);
         socketRef.current = socket;
 
-        socket.onopen = () => {
-            console.log('WebSocket connected');
-            onConnectionChange(true);
-
-            // Настраиваем пинг
+        const handlePing = () => {
             pingIntervalRef.current = setInterval(() => {
                 if (socket.readyState === WebSocket.OPEN) {
                     socket.send(JSON.stringify({type: 'ping'}));
                 }
             }, 25000);
-        };
+        }
 
-        socket.onmessage = (event) => {
-            try {
-                const data = JSON.parse(event.data);
-
-                if (data.type === 'text_update') {
-                    setText(data.content);
-                }
-
-                if (['room-updated', 'room-created'].includes(data.type)) {
-                    setRoomIdForCopy(data.roomId)
-                }
-            } catch (err) {
-                console.error('Error parsing message:', err);
-            }
-        };
-
-        socket.onclose = () => {
-            console.log('WebSocket disconnected');
-            onConnectionChange(false);
-            if (pingIntervalRef.current) {
-                clearInterval(pingIntervalRef.current);
-            }
-            // Пытаемся переподключиться через 1 секунду
-            setTimeout(connectWebSocket, 1000);
-        };
-
-        socket.onerror = (error) => {
-            console.error('WebSocket error:', error);
-        };
+        socket.onopen = onOpen(onConnectionChange, handlePing);
+        socket.onmessage = onMessage(setRoomIdForCopy, setText);
+        socket.onclose = onClose(onConnectionChange, pingIntervalRef, handleConnectWebSocket);
+        socket.onerror = onError;
 
         return () => {
             if (socket.readyState === WebSocket.OPEN) {
@@ -91,10 +71,9 @@ const SharedTextEditor = ({
         };
     }, [websocketUrl, onConnectionChange]);
 
-    // Инициализация подключения
     useEffect(() => {
         isMountedRef.current = true;
-        connectWebSocket();
+        handleConnectWebSocket();
 
         return () => {
             isMountedRef.current = false;
@@ -105,27 +84,24 @@ const SharedTextEditor = ({
                 clearInterval(pingIntervalRef.current);
             }
         };
-    }, [connectWebSocket]);
+    }, [handleConnectWebSocket]);
 
-    const sendTextUpdate = useCallback((newText: string) => {
+    const handleTextChange = (text: string) => {
+        setText(text);
+        handleSendTextUpdate(text)
+    };
+
+    const handleSendTextUpdate = (newText: string) => {
         if (socketRef.current?.readyState === WebSocket.OPEN) {
             socketRef.current.send(JSON.stringify({
                 type: 'text_update',
-                roomId: currentRoomId,
                 content: newText
             }));
         }
-    }, [currentRoomId]);
-
-    const handleTextChange = (text: string) => {
-        // const newText = e.target.value;
-        setText(text);
-        sendTextUpdate(text);
     };
 
-
-    const highlightCode = (code: string) => {
-        switch (language) {
+    const handleHighlightCode = (code: string) => {
+        switch (pageSettings.language) {
             case 'go':
                 return Prism.highlight(code, Prism.languages.go, 'go');
             case 'csharp':
@@ -137,25 +113,27 @@ const SharedTextEditor = ({
     };
 
     return (
-        <div className="bg-white rounded-xl border border-gray-200 h-max">
-            <SimpleSelect
-                options={languages}
-                defaultValue={language}
-                onChange={(value) => setLanguage(value)}
+        <div className="bg-white border rounded-2xl border-gray-200 h-max">
+            <ToolBar
+                currentTheme={currentTheme}
+                pageSettings={pageSettings}
+                setPageSettings={setPageSettings}
+                setCurrentTheme={setCurrentTheme}
             />
             <Editor
-                className="h-96 overflow-scroll bg-gray-50 rounded-lg"
+                className={`min-h-96 ${currentTheme.editorBg} ${currentTheme.editorText} prism-${currentTheme.value}`}
                 value={text}
                 onValueChange={code => handleTextChange(code)}
-                highlight={highlightCode}
+                highlight={handleHighlightCode}
                 padding={10}
                 style={{
                     fontFamily: '"Fira code", "Fira Mono", monospace',
-                    fontSize: 12,
-                    backgroundColor: 'transparent',
+                    fontSize: Number(pageSettings.font),
+                    borderBottomLeftRadius: '1rem',
+                    borderBottomRightRadius: '1rem'
                 }}
-                textareaClassName="focus:outline-none focus:ring-0 border-0 overflow-scroll"
-                preClassName="border-0 focus:outline-none"
+                textareaClassName={`focus:outline-none focus:ring-0 border-0`}
+                preClassName={`border-0 focus:outline-none`}
             />
         </div>
     );
