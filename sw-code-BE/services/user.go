@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gorilla/websocket"
 	"log"
+	"sync"
 )
 
 type User struct {
@@ -12,7 +13,8 @@ type User struct {
 	IsMaster         bool
 	RoomID           string          //not using
 	Socket           *websocket.Conn // all messages for Socket translate to room.Broadcast
-	IncomingMessages chan string     // channel for messages from room(all users) to client
+	SocketMutex      *sync.Mutex
+	IncomingMessages chan string // channel for messages from room(all users) to client
 }
 
 func HandleUser(ctx context.Context, room *Room, conn *websocket.Conn, clientID string, isMaster bool) {
@@ -81,6 +83,8 @@ func (u *User) sendMessage(message string, messageType MessageType) error {
 		Message: message,
 	}
 
+	u.SocketMutex.Lock()
+	defer u.SocketMutex.Unlock()
 	if err := u.Socket.WriteJSON(request); err != nil {
 		return fmt.Errorf("failed to send message for user: %w", err)
 	}
@@ -97,10 +101,12 @@ func (u *User) subscribeToBroadcast() {
 				continue
 			}
 
+			u.SocketMutex.Lock()
 			err := u.Socket.WriteMessage(websocket.TextMessage, []byte(msg))
 			if err != nil {
 				log.Printf("failed to send: %s, to client %s: , - %s\n\n", msg, u.Id, err.Error())
 			}
+			u.SocketMutex.Unlock()
 		}
 	}()
 }
