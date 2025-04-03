@@ -19,7 +19,7 @@ export const SimpleSelect = ({options, defaultValue, onChange}: SimpleSelectProp
     const selectedLabel = options.find(opt => opt.value === selectedValue)?.label || "";
 
     return (
-        <div className="relative inline-block w-fit text-[8px]">
+        <div className="relative inline-block w-fit text-[14px]">
             <button
                 type="button"
                 className="w-full px-2 py-1 text-left bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none"

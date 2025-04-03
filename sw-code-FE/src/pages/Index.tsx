@@ -44,7 +44,7 @@ const Index = () => {
 
     return (
         <div className="min-h-screen px-6 bg-gray-200">
-            <div className="max-w-full mx-auto pb-6">
+            <div className="max-w-full mx-auto pb-6 h-full">
                 <div className="mb-4 flex justify-between items-center bg-white px-4 py-4 rounded-b-xl">
                     <div className='w-full flex justify-between gap-2 items-center'>
                         <img

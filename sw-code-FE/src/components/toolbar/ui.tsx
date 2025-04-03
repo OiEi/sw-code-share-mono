@@ -14,7 +14,7 @@ interface IToolBar {
 export const ToolBar = (props: IToolBar) => {
     return (
         <div
-            className={`flex gap-4 justify-start text-[10px] p-2 ${props.currentTheme.themeHeader.headerBackground} rounded-t-xl`}>
+            className={`flex gap-4 justify-start text-[16px] p-2 ${props.currentTheme.themeHeader.headerBackground} rounded-t-xl`}>
             <ToolBarItem
                 title={'language'}
                 options={languages}

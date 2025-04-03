@@ -113,7 +113,7 @@ const SharedTextEditor = ({
     };
 
     return (
-        <div className="bg-white border rounded-2xl border-gray-200 h-max">
+        <div className="bg-white border rounded-2xl border-gray-200 h-[calc(100vh-8rem)]">
             <ToolBar
                 currentTheme={currentTheme}
                 pageSettings={pageSettings}
@@ -121,7 +121,7 @@ const SharedTextEditor = ({
                 setCurrentTheme={setCurrentTheme}
             />
             <Editor
-                className={`min-h-96 ${currentTheme.editorBg} ${currentTheme.editorText} prism-${currentTheme.value}`}
+                className={`flex-1 ${currentTheme.editorBg} ${currentTheme.editorText} prism-${currentTheme.value}`}
                 value={text}
                 onValueChange={code => handleTextChange(code)}
                 highlight={handleHighlightCode}
