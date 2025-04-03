@@ -20,6 +20,7 @@ import {Theme} from "@/lib/theme/theme.type.ts";
 import {PageSettings} from "@/components/toolbar/page-settings.ts";
 
 import {themes} from "@/lib/theme/theme.ts";
+import {useDebouncedCallback} from "@/lib/hooks/useDebounce.ts";
 
 interface SharedTextEditorProps {
     websocketUrl: string;
@@ -32,17 +33,25 @@ const SharedTextEditor = ({
                               setRoomIdForCopy,
                               onConnectionChange,
                           }: SharedTextEditorProps) => {
-    const [text, setText] = useState('');
+    const [rawText, setRawText] = useState('');
     const socketRef = useRef<WebSocket | null>(null);
     const pingIntervalRef = useRef<number | null>(null);
     const isMountedRef = useRef(false);
-
     const [currentTheme, setCurrentTheme] = useState<Theme>(themes[0]);
-
     const [pageSettings, setPageSettings] = useState<PageSettings>({
         language: 'go',
         font: '12'
     });
+
+    const debouncedSendText = useDebouncedCallback((text: string) => {
+        if (socketRef.current?.readyState === WebSocket.OPEN) {
+            socketRef.current.send(JSON.stringify({
+                type: 'text_update',
+                content: text
+            }));
+            console.log('Sent debounced update:', text.length, 'chars');
+        }
+    }, 500);
 
     const handleConnectWebSocket = useCallback(() => {
         if (!websocketUrl || !isMountedRef.current) return;
@@ -60,7 +69,7 @@ const SharedTextEditor = ({
         }
 
         socket.onopen = onOpen(onConnectionChange, handlePing);
-        socket.onmessage = onMessage(setRoomIdForCopy, setText);
+        socket.onmessage = onMessage(setRoomIdForCopy, setRawText);
         socket.onclose = onClose(onConnectionChange, pingIntervalRef, handleConnectWebSocket);
         socket.onerror = onError;
 
@@ -87,17 +96,8 @@ const SharedTextEditor = ({
     }, [handleConnectWebSocket]);
 
     const handleTextChange = (text: string) => {
-        setText(text);
-        handleSendTextUpdate(text)
-    };
-
-    const handleSendTextUpdate = (newText: string) => {
-        if (socketRef.current?.readyState === WebSocket.OPEN) {
-            socketRef.current.send(JSON.stringify({
-                type: 'text_update',
-                content: newText
-            }));
-        }
+        setRawText(text);
+        debouncedSendText(text)
     };
 
     const handleHighlightCode = (code: string) => {
@@ -122,7 +122,7 @@ const SharedTextEditor = ({
             />
             <Editor
                 className={`min-h-[calc(100vh-8rem)] ${currentTheme.editorBg} ${currentTheme.editorText} prism-${currentTheme.value}`}
-                value={text}
+                value={rawText}
                 onValueChange={code => handleTextChange(code)}
                 highlight={handleHighlightCode}
                 padding={10}
