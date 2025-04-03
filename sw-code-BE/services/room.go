@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
 	"log"
@@ -20,25 +19,25 @@ var (
 type Room struct {
 	Id         string
 	Users      map[User]struct{} //ключом наверное лучше сделать User.Id
-	Broadcast  chan string
+	Broadcast  chan WsRequest
 	Register   chan User
 	Unregister chan User
 	Content    string
 	ContentMux sync.RWMutex //бездумно прекрыл жёпу, по факту на 1 экземпляр Room крутится 1 рутинка, так что рейса не должно быть
 }
 
-func GetRoom(ctx context.Context, roomId string) (*Room, bool, error) {
+func GetRoom(ctx context.Context, roomId string) (*Room, error) {
 
 	//TODO выпили!
 	if roomId == "b4655d58-21ae-4e6e-aee0-ab830142a654" {
 		room := createRoom(ctx)
 		room.Id = roomId
-		return room, true, nil
+		return room, nil
 	}
 
 	if len(roomId) == 0 {
 		log.Println("roomId is empty, create a new room")
-		return createRoom(ctx), true, nil
+		return createRoom(ctx), nil
 	}
 
 	roomsMutex.Lock()
@@ -47,28 +46,14 @@ func GetRoom(ctx context.Context, roomId string) (*Room, bool, error) {
 
 	if !ok {
 		log.Printf("комната с Id %s не найдена, создаем новую", roomId)
-		return createRoom(ctx), true, nil
+		return createRoom(ctx), nil
 	}
 
-	return room, false, nil
+	return room, nil
 }
 
-func createRoom(ctx context.Context) *Room {
-	roomID := uuid.New().String()
-	room := Room{
-		Id:         roomID,
-		Users:      make(map[User]struct{}),
-		Broadcast:  make(chan string, 2),
-		Register:   make(chan User),
-		Unregister: make(chan User),
-	}
-
-	roomsMutex.Lock()
-	rooms[roomID] = &room
-	roomsMutex.Unlock()
-
-	go room.start(ctx) // рутина отработает когда комната опустеет (или по котексту)
-	return &room
+func (room *Room) updateUsersCount() {
+	room.Broadcast <- NewWsRequest(RoomUsersCount, strconv.Itoa(len(room.Users)))
 }
 
 func (room *Room) start(ctx context.Context) {
@@ -81,35 +66,21 @@ func (room *Room) start(ctx context.Context) {
 		case user := <-room.Register:
 			room.Users[user] = struct{}{}
 
-			puk := WsRequest{
-				Type:    RoomUsersCount,
-				Message: strconv.Itoa(len(room.Users)),
-			}
-
-			jsonBytes, err := json.Marshal(puk)
-			if err != nil {
-				log.Println(err)
-			}
-
-			room.Broadcast <- string(jsonBytes)
-
-			//if !user.IsMaster {
-			//	//инвалидируем ссылку что бы новый клиент не мог её пошарить кому-то, новый id пушим создателю комнаты
-			//	room.invalidateRoomId()
-			//}
-
 		case user := <-room.Unregister:
-			if _, ok := room.Users[user]; ok {
-				delete(room.Users, user)
-				close(user.IncomingMessages)
+			if _, ok := room.Users[user]; !ok {
+				continue
 			}
+
+			delete(room.Users, user)
+			close(user.IncomingMessages)
 
 		case message := <-room.Broadcast:
-
 			//обновляем контент комнаты для отображения текущего состояния комнаты новым пользователям
-			room.ContentMux.Lock()
-			room.Content = message
-			room.ContentMux.Unlock()
+			if message.Type == TextMessage {
+				room.ContentMux.Lock()
+				room.Content = message.Message
+				room.ContentMux.Unlock()
+			}
 
 			for user := range room.Users {
 				user.IncomingMessages <- message
@@ -122,18 +93,36 @@ func (room *Room) start(ctx context.Context) {
 	}
 }
 
-func (room *Room) invalidateRoomId() {
-	newRoomId := uuid.New().String()
-	log.Printf("для комнаты %s создан новый id %s", room.Id, newRoomId)
+//func (room *Room) invalidateRoomId() {
+//	newRoomId := uuid.New().String()
+//	log.Printf("для комнаты %s создан новый id %s", room.Id, newRoomId)
+//
+//	roomsMutex.Lock()
+//	rooms[newRoomId] = room
+//	delete(rooms, room.Id)
+//	roomsMutex.Unlock()
+//
+//	for u := range room.Users {
+//		if u.IsMaster {
+//			u.sendMessage(newRoomId, RoomIdUpdated) //TODO error
+//		}
+//	}
+//}
+
+func createRoom(ctx context.Context) *Room {
+	roomID := uuid.New().String()
+	room := Room{
+		Id:         roomID,
+		Users:      make(map[User]struct{}),
+		Broadcast:  make(chan WsRequest),
+		Register:   make(chan User),
+		Unregister: make(chan User),
+	}
 
 	roomsMutex.Lock()
-	rooms[newRoomId] = room
-	delete(rooms, room.Id)
+	rooms[roomID] = &room
 	roomsMutex.Unlock()
 
-	for u := range room.Users {
-		if u.IsMaster {
-			u.sendMessage(newRoomId, RoomIdUpdated) //TODO error
-		}
-	}
+	go room.start(ctx) // рутина отработает когда комната опустеет (или по котексту)
+	return &room
 }

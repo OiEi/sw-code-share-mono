@@ -30,14 +30,14 @@ func WsHandler() func(http.ResponseWriter, *http.Request) {
 			log.Println("этот пидр до сих пор не выключил комп")
 		}
 
-		clientId := uuid.New().String()
+		userId := uuid.New().String()
 
-		log.Printf("инициирован новый ws, clientId: %s, urlRoomId %s", clientId, roomId)
+		log.Printf("инициирован новый ws, userId: %s, urlRoomId %s", userId, roomId)
 
 		roomCtx, cancelRoom := context.WithTimeout(context.TODO(), _roomLifetime)
 		defer cancelRoom()
 
-		room, isNewRoom, err := services.GetRoom(roomCtx, roomId)
+		room, err := services.GetRoom(roomCtx, roomId)
 		if err != nil {
 			fmt.Printf("не удалось получить комнату для roomId %s\n", roomId)
 			http.Error(w, err.Error(), http.StatusNotFound)
@@ -56,13 +56,13 @@ func WsHandler() func(http.ResponseWriter, *http.Request) {
 			if err != nil {
 				fmt.Println("не удалось закрыть websocket")
 			}
-			fmt.Printf("websocket соединение клиента %s закрыто\n", clientId)
+			fmt.Printf("websocket соединение клиента %s закрыто\n", userId)
 		}()
 
 		userLifeTimeCtx, cancel := context.WithTimeout(roomCtx, _userLifetime)
 		defer cancel()
 
-		services.HandleUser(userLifeTimeCtx, room, conn, clientId, isNewRoom)
+		services.HandleUser(userLifeTimeCtx, room, conn, services.UserId(userId))
 	}
 }
 

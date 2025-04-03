@@ -2,32 +2,29 @@ package services
 
 import (
 	"context"
-	"fmt"
 	"github.com/gorilla/websocket"
 	"log"
 	"sync"
 )
 
+type UserId string
+
 type User struct {
-	Id               string
-	IsMaster         bool
+	Id               UserId
 	RoomID           string          //not using
 	Socket           *websocket.Conn // all messages for Socket translate to room.Broadcast
 	SocketMutex      *sync.Mutex
-	IncomingMessages chan string // channel for messages from room(all users) to client
+	IncomingMessages chan WsRequest // channel for messages from room(all users) to client
 }
 
-func HandleUser(ctx context.Context, room *Room, conn *websocket.Conn, clientID string, isMaster bool) {
+func HandleUser(ctx context.Context, room *Room, conn *websocket.Conn, userId UserId) {
 	user := User{
-		Id:               clientID,
-		IsMaster:         isMaster,
+		Id:               userId,
 		RoomID:           room.Id,
 		Socket:           conn,
 		SocketMutex:      &sync.Mutex{},
-		IncomingMessages: make(chan string),
+		IncomingMessages: make(chan WsRequest),
 	}
-
-	user.subscribeToBroadcast()
 
 	room.Register <- user
 
@@ -36,23 +33,13 @@ func HandleUser(ctx context.Context, room *Room, conn *websocket.Conn, clientID 
 		room.Unregister <- user
 	}()
 
-	//if isMaster {
-	//	err := user.sendMessage(room.Id, RoomCreated)
-	//	if err != nil {
-	//		log.Println("failed to send room-created message:", err)
-	//		return
-	//	}
-	//}
+	user.subscribeToIncomingMessages()
+	user.IncomingMessages <- NewWsRequest(RoomCreated, room.Id)
+	user.IncomingMessages <- NewWsRequest(TextMessage, room.Content)
 
-	err := user.sendMessage(room.Id, RoomCreated)
-	if err != nil {
-		log.Println("failed to send room-created message:", err)
-		return
-	}
+	room.updateUsersCount()
 
-	//sending current room.Content to new User
-	user.IncomingMessages <- room.Content
-
+	var message WsRequest
 	//read messages from User and push it to Broadcast
 	for {
 		select {
@@ -60,9 +47,9 @@ func HandleUser(ctx context.Context, room *Room, conn *websocket.Conn, clientID 
 			log.Printf("user %s life time exceeded.\n", user.Id)
 			return
 		default:
-			_, msg, err := user.Socket.ReadMessage()
+			err := user.Socket.ReadJSON(&message)
 			if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
-				log.Printf("user %s closed the connection: %s\n", clientID, err)
+				log.Printf("user %s closed the connection: %s\n", userId, err)
 				return
 			}
 
@@ -73,47 +60,35 @@ func HandleUser(ctx context.Context, room *Room, conn *websocket.Conn, clientID 
 			}
 
 			if err != nil {
-				log.Printf("err conn.ReadMessage() from user %s: - %s\n", clientID, err)
+				log.Printf("err conn.ReadMessage() from user %s: - %s\n", userId, err)
 				return
 			}
 
-			log.Printf("message received from room %s for user %s: - %s\n", room.Id, clientID, string(msg))
+			log.Printf("message received from room %s for user %s: - %v\n", room.Id, userId, message)
 
-			room.Broadcast <- string(msg)
+			if message.Type != TextMessage {
+				continue
+			}
+
+			room.Broadcast <- message
 		}
 	}
 }
 
-func (u *User) sendMessage(message string, messageType MessageType) error {
-	request := WsRequest{
-		Type:    messageType,
-		Message: message,
-	}
-
-	u.SocketMutex.Lock()
-	defer u.SocketMutex.Unlock()
-	if err := u.Socket.WriteJSON(request); err != nil {
-		return fmt.Errorf("failed to send message for user: %w", err)
-	}
-
-	return nil
-}
-
-// subscribeToBroadcast subscribe to broadcast to receive messages
-func (u *User) subscribeToBroadcast() {
+func (u *User) subscribeToIncomingMessages() {
 	go func() {
 		//room will close this after room.Unregister <- client
 		for msg := range u.IncomingMessages {
-			if len(msg) == 0 {
+			if len(msg.Message) == 0 {
 				continue
 			}
-
+			
 			u.SocketMutex.Lock()
-			err := u.Socket.WriteMessage(websocket.TextMessage, []byte(msg))
-			if err != nil {
-				log.Printf("failed to send: %s, to client %s: , - %s\n\n", msg, u.Id, err.Error())
-			}
+			err := u.Socket.WriteJSON(msg)
 			u.SocketMutex.Unlock()
+			if err != nil {
+				log.Printf("failed send to client %s,\n err %s,\n msg:  %v\n", u.Id, err.Error(), msg)
+			}
 		}
 	}()
 }

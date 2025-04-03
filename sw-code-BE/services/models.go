@@ -16,3 +16,10 @@ type WsRequest struct {
 	Message string      `json:"message"`
 	//RoomId  string      `json:"roomId"`
 }
+
+func NewWsRequest(messageType MessageType, message string) WsRequest {
+	return WsRequest{
+		Type:    messageType,
+		Message: message,
+	}
+}
