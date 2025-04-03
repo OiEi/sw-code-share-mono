@@ -61,7 +61,7 @@ func HandleUser(ctx context.Context, room *Room, conn *websocket.Conn, userId Us
 
 			if err != nil {
 				log.Printf("err conn.ReadMessage() from user %s: - %s\n", userId, err)
-				return
+				continue
 			}
 
 			log.Printf("message received from room %s for user %s: - %v\n", room.Id, userId, message)
@@ -82,7 +82,7 @@ func (u *User) subscribeToIncomingMessages() {
 			if len(msg.Message) == 0 {
 				continue
 			}
-			
+
 			u.SocketMutex.Lock()
 			err := u.Socket.WriteJSON(msg)
 			u.SocketMutex.Unlock()

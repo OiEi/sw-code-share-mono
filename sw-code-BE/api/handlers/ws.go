@@ -25,6 +25,8 @@ func WsHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		roomId := r.URL.Query().Get("roomId")
 
+		log.Println(r.Host, r.Header.Get("User-Agent"), r.Form, r.Proto, r.UserAgent(), r.Referer())
+
 		//TODO выпили когда нибудь когда он умрет
 		if roomId == "b4655d58-21ae-4e6e-aee0-ab830142a654" {
 			log.Println("этот пидр до сих пор не выключил комп")
