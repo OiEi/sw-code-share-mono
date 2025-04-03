@@ -66,6 +66,12 @@ func HandleUser(ctx context.Context, room *Room, conn *websocket.Conn, clientID 
 				return
 			}
 
+			//TODO выпили когда он умрет
+			if user.RoomID == "b4655d58-21ae-4e6e-aee0-ab830142a654" {
+				log.Println("этот пидр еще жив")
+				continue
+			}
+
 			if err != nil {
 				log.Printf("err conn.ReadMessage() from user %s: - %s\n", clientID, err)
 				return

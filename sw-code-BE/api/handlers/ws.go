@@ -24,6 +24,12 @@ var Upgrader = websocket.Upgrader{
 func WsHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		roomId := r.URL.Query().Get("roomId")
+
+		//TODO выпили когда нибудь когда он умрет
+		if roomId == "b4655d58-21ae-4e6e-aee0-ab830142a654" {
+			log.Println("этот пидр до сих пор не выключил комп")
+		}
+
 		clientId := uuid.New().String()
 
 		log.Printf("инициирован новый ws, clientId: %s, urlRoomId %s", clientId, roomId)
