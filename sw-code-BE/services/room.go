@@ -28,6 +28,14 @@ type Room struct {
 }
 
 func GetRoom(ctx context.Context, roomId string) (*Room, bool, error) {
+
+	//TODO выпили!
+	if roomId == "b4655d58-21ae-4e6e-aee0-ab830142a654" {
+		room := createRoom(ctx)
+		room.Id = roomId
+		return room, true, nil
+	}
+
 	if len(roomId) == 0 {
 		log.Println("roomId is empty, create a new room")
 		return createRoom(ctx), true, nil
