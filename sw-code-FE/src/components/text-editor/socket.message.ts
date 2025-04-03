@@ -1,5 +1,5 @@
 export type OnMessageEvent = {
-    type: string;
+    type: MessageEvent;
     roomId: string;
-    content: string;
+    message: string;
 }

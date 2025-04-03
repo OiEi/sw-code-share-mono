@@ -25,7 +25,7 @@ export const themes: Theme[] = [
     },
     {
         value: "cutemiya",
-        label: "cutemiya",
+        label: "Solarized",
         prismTheme: "prism.css",
         editorBg: "bg-[#002b36]",
         editorText: "text-[#93a1a1]",

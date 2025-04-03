@@ -1,12 +1,14 @@
 import {useState, useEffect, useRef} from 'react';
 import {useSearchParams} from 'react-router-dom';
 import SharedTextEditor from "@/components/text-editor/ui.tsx";
+import {PeopleIcon} from "@/components/ui/icons/people-icon.tsx";
 
 const Index = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const initialRoomId = searchParams.get('roomId') || '';
     const [currentRoomId, setCurrentRoomId] = useState(initialRoomId);
     const [, setIsConnected] = useState(false);
+    const peopleCount = useRef<number>(0)
 
     const roomIdForCopy = useRef('')
 
@@ -42,6 +44,11 @@ const Index = () => {
         )
     }
 
+    const renderPeopleCount = () => <div className={'flex gap-4 text-green-600 font-bold'}>
+        <PeopleIcon />
+        {peopleCount.current}
+    </div>
+
     return (
         <div className="min-h-screen px-6 bg-gray-200">
             <div className="max-w-full mx-auto pb-6 h-full">
@@ -52,7 +59,10 @@ const Index = () => {
                             alt="Smartway Logo"
                             className="h-8 w-auto"
                         />
-                        {renderCopyButton()}
+                        <div className={'flex gap-12'}>
+                            {renderPeopleCount()}
+                            {renderCopyButton()}
+                        </div>
                     </div>
                 </div>
 
@@ -61,7 +71,11 @@ const Index = () => {
                     onConnectionChange={setIsConnected}
                     setRoomIdForCopy={(id: string) => {
                         roomIdForCopy.current = id
-                    }}/>
+                    }}
+                    setPeopleCount={(count: number) => {
+                        peopleCount.current = count;
+                    }}
+                />
             </div>
         </div>
     );

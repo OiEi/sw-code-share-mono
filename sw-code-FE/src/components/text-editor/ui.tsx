@@ -21,17 +21,21 @@ import {PageSettings} from "@/components/toolbar/page-settings.ts";
 
 import {themes} from "@/lib/theme/theme.ts";
 import {useDebouncedCallback} from "@/lib/hooks/useDebounce.ts";
+import {useSearchParams} from "react-router-dom";
+import {Events} from "@/components/text-editor/socket.events.ts";
 
 interface SharedTextEditorProps {
     websocketUrl: string;
     setRoomIdForCopy: (newRoomId: string) => void;
     onConnectionChange: (connected: boolean) => void;
+    setPeopleCount: (count: number) => void;
 }
 
 const SharedTextEditor = ({
                               websocketUrl,
                               setRoomIdForCopy,
                               onConnectionChange,
+                              setPeopleCount
                           }: SharedTextEditorProps) => {
     const [rawText, setRawText] = useState('');
     const socketRef = useRef<WebSocket | null>(null);
@@ -42,12 +46,13 @@ const SharedTextEditor = ({
         language: 'go',
         font: '12'
     });
+    const [, setSearchParams] = useSearchParams()
 
     const debouncedSendText = useDebouncedCallback((text: string) => {
         if (socketRef.current?.readyState === WebSocket.OPEN) {
             socketRef.current.send(JSON.stringify({
-                type: 'text_update',
-                content: text
+                type: Events.TextMessage,
+                message: text
             }));
             console.log('Sent debounced update:', text.length, 'chars');
         }
@@ -63,14 +68,22 @@ const SharedTextEditor = ({
         const handlePing = () => {
             pingIntervalRef.current = setInterval(() => {
                 if (socket.readyState === WebSocket.OPEN) {
-                    socket.send(JSON.stringify({type: 'ping'}));
+                    socket.send(JSON.stringify({type: Events.Undefined}));
                 }
             }, 25000);
         }
 
+        const handleDisconnect = () => {
+            const newSearchParams = new URLSearchParams();
+            newSearchParams.set('roomId', '')
+            setSearchParams(newSearchParams);
+
+            window.location.reload()
+        }
+
         socket.onopen = onOpen(onConnectionChange, handlePing);
-        socket.onmessage = onMessage(setRoomIdForCopy, setRawText);
-        socket.onclose = onClose(onConnectionChange, pingIntervalRef, handleConnectWebSocket);
+        socket.onmessage = onMessage(setRoomIdForCopy, setRawText, setPeopleCount);
+        socket.onclose = onClose(onConnectionChange, pingIntervalRef, () => handleDisconnect());
         socket.onerror = onError;
 
         return () => {
