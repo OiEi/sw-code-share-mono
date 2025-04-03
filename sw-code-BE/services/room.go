@@ -2,9 +2,11 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
 	"log"
+	"strconv"
 	"sync"
 )
 
@@ -70,10 +72,19 @@ func (room *Room) start(ctx context.Context) {
 		case user := <-room.Register:
 			room.Users[user] = struct{}{}
 
-			if !user.IsMaster {
-				//инвалидируем ссылку что бы новый клиент не мог её пошарить кому-то, новый id пушим создателю комнаты
-				room.invalidateRoomId()
+			puk := WsRequest{
+				Type:    RoomUsersCount,
+				Message: strconv.Itoa(len(room.Users)),
 			}
+
+			jsonBytes, _ := json.Marshal(puk)
+
+			room.Broadcast <- string(jsonBytes)
+
+			//if !user.IsMaster {
+			//	//инвалидируем ссылку что бы новый клиент не мог её пошарить кому-то, новый id пушим создателю комнаты
+			//	room.invalidateRoomId()
+			//}
 
 		case user := <-room.Unregister:
 			if _, ok := room.Users[user]; ok {
@@ -109,7 +120,7 @@ func (room *Room) invalidateRoomId() {
 
 	for u := range room.Users {
 		if u.IsMaster {
-			u.sendRoomIdMessage(newRoomId, "room-updated") //TODO error
+			u.sendMessage(newRoomId, RoomIdUpdated) //TODO error
 		}
 	}
 }
