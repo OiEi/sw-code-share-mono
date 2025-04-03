@@ -77,7 +77,10 @@ func (room *Room) start(ctx context.Context) {
 				Message: strconv.Itoa(len(room.Users)),
 			}
 
-			jsonBytes, _ := json.Marshal(puk)
+			jsonBytes, err := json.Marshal(puk)
+			if err != nil {
+				log.Println(err)
+			}
 
 			room.Broadcast <- string(jsonBytes)
 
@@ -93,6 +96,7 @@ func (room *Room) start(ctx context.Context) {
 			}
 
 		case message := <-room.Broadcast:
+
 			//обновляем контент комнаты для отображения текущего состояния комнаты новым пользователям
 			room.ContentMux.Lock()
 			room.Content = message

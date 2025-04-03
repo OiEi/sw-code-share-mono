@@ -7,16 +7,6 @@ import (
 	"log"
 )
 
-type MessageType int
-
-const (
-	Undefined MessageType = iota
-	TextMessage
-	RoomCreated
-	RoomIdUpdated //not use
-	RoomUsersCount
-)
-
 type User struct {
 	Id               string
 	IsMaster         bool
@@ -48,6 +38,12 @@ func HandleUser(ctx context.Context, room *Room, conn *websocket.Conn, clientID 
 	//		return
 	//	}
 	//}
+
+	err := user.sendMessage(room.Id, RoomCreated)
+	if err != nil {
+		log.Println("failed to send room-created message:", err)
+		return
+	}
 
 	user.subscribeToBroadcast()
 
@@ -86,7 +82,7 @@ func (u *User) sendMessage(message string, messageType MessageType) error {
 	}
 
 	if err := u.Socket.WriteJSON(request); err != nil {
-		return fmt.Errorf("failed to send room-created message: %w", err)
+		return fmt.Errorf("failed to send message for user: %w", err)
 	}
 
 	return nil
