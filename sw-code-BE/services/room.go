@@ -83,6 +83,7 @@ func (room *Room) start(ctx context.Context) {
 			}
 
 			room.Broadcast <- string(jsonBytes)
+			room.Broadcast <- "1"
 
 			//if !user.IsMaster {
 			//	//инвалидируем ссылку что бы новый клиент не мог её пошарить кому-то, новый id пушим создателю комнаты
