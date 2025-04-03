@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"log"
 	"net/http"
 	"sw-code-interview/services"
 	"time"
@@ -23,6 +24,9 @@ var Upgrader = websocket.Upgrader{
 func WsHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		roomId := r.URL.Query().Get("roomId")
+		clientId := uuid.New().String()
+
+		log.Printf("инициирован новый ws, clientId: %s, urlRoomId %s", clientId, roomId)
 
 		roomCtx, cancelRoom := context.WithTimeout(context.TODO(), _roomLifetime)
 		defer cancelRoom()
@@ -40,8 +44,6 @@ func WsHandler() func(http.ResponseWriter, *http.Request) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-
-		clientId := uuid.New().String()
 
 		defer func() {
 			err = conn.Close()

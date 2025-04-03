@@ -46,7 +46,8 @@ func GetRoom(ctx context.Context, roomId string) (*Room, bool, error) {
 	roomsMutex.Unlock()
 
 	if !ok {
-		return nil, false, fmt.Errorf("комната с Id %s не найдена", roomId)
+		log.Printf("комната с Id %s не найдена, создаем новую", roomId)
+		return createRoom(ctx), true, nil
 	}
 
 	return room, false, nil
