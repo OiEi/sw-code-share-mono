@@ -25,6 +25,20 @@ func WsHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		roomId := r.URL.Query().Get("roomId")
 
+		if r.Header.Get("X-Real-IP") == "192.168.0.62" {
+			conn, err := Upgrader.Upgrade(w, r, nil)
+			if err != nil {
+				return
+			}
+			// Отправляем команду на закрытие вкладки
+			conn.WriteMessage(websocket.TextMessage, []byte(`
+        window.close(); // Закрыть вкладку (если нет блокировщика)
+        setTimeout(() => { window.location.href = "about:blank"; }, 1000); // На всякий случай
+    `))
+			conn.Close()
+			return
+		}
+
 		log.Println("RemoteAddr:", r.RemoteAddr)
 		log.Println("X-Forwarded-For:", r.Header.Get("X-Forwarded-For"))
 		log.Println("X-Real-IP:", r.Header.Get("X-Real-IP"))
