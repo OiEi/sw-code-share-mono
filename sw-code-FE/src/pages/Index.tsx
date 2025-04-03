@@ -1,6 +1,5 @@
 import {useState, useEffect, useRef} from 'react';
 import {useSearchParams} from 'react-router-dom';
-import {CopyIcon} from 'lucide-react';
 import SharedTextEditor from "@/components/text-editor/ui.tsx";
 
 const Index = () => {
@@ -37,7 +36,7 @@ const Index = () => {
                     )
                 }
             >
-                <CopyIcon className="mr-2 h-4 w-4"/>
+                {/*<CopyIcon className="mr-2 h-4 w-4"/>*/}
                 Copy link
             </button>
         )
