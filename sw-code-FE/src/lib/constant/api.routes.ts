@@ -1,4 +1,7 @@
 import process from "process";
+import {loadEnv} from "vite";
+
+const apiUrl = import.meta.env.VITE_API_URL;
 
 export const ROUTES = {
     WS: (roomId?: string) => `/api/ws?roomId=${roomId || ''}`,
@@ -6,5 +9,5 @@ export const ROUTES = {
     AUTH: `/auth`
 }
 
-export const getFullRoute = (url: string) => `${window.location.protocol}//${process.env.VITE_API_HOST}${url}`
-export const getFullWsRoute = (url: string) => `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${process.env.VITE_API_HOST}${url}`
+export const getFullRoute = (url: string) => `${window.location.protocol}//${apiUrl}${url}`
+export const getFullWsRoute = (url: string) => `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${apiUrl}${url}`
