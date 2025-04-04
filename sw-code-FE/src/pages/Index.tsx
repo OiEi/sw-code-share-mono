@@ -67,7 +67,7 @@ const Index = () => {
         )
     }
 
-    const renderSidebarButton = memo(() => {
+    const renderSidebarButton = () => {
         if (!isAuth) {
             return null;
         }
@@ -81,7 +81,7 @@ const Index = () => {
                 {isSidebarOpen ? '<' : '>'}
             </button>
         );
-    })
+    }
 
     return (
         <div className="min-h-screen px-6 bg-gray-200">
@@ -114,7 +114,7 @@ const Index = () => {
                         />
                     </div>
 
-                    {renderSidebarButton}
+                    {renderSidebarButton()}
 
                     <div
                         className={`fixed top-0 right-0 h-full bg-white shadow-lg transition-all duration-300 z-20
