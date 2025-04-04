@@ -1,7 +1,4 @@
-import process from "process";
-import {loadEnv} from "vite";
-
-const apiUrl = import.meta.env.VITE_API_URL;
+const apiUrl = import.meta.env.VITE_API_HOST;
 
 export const ROUTES = {
     WS: (roomId?: string) => `/api/ws?roomId=${roomId || ''}`,
