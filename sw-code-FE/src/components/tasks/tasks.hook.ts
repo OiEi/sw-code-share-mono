@@ -20,7 +20,7 @@ export const useTasksOnce = (): {
                 setIsAuth(authResult);
                 if (authResult) {
                     const tasks = await getTasks();
-                    if (isMounted) setData(tasks);
+                    setData(tasks);
                 }
             } catch (e) {
                 return { isAuth: false }
@@ -32,7 +32,11 @@ export const useTasksOnce = (): {
         return () => { isMounted = false };
     }, []);
 
+    console.log(data)
+
     const returnedData = data as Tasks
+    console.log(returnedData)
+
 
     return { data: returnedData, isAuth };
 };

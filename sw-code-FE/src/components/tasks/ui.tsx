@@ -8,6 +8,10 @@ interface TasksProps {
 }
 
 export const Tasks = ({ data }: TasksProps) => {
+    if (!data) {
+        return null;
+    }
+    console.log(data)
     const tabs: TabItem[] = Object.entries(data).map(([language, categories]) => ({
         label: language,
         id: language,
