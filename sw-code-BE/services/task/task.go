@@ -19,6 +19,7 @@ type Task struct {
 
 type Tasks map[string]map[string][]Task
 
+// TODO порефачь, накидано на ходу
 func GetTasks() Tasks {
 	tasks := make(map[string]map[string][]Task)
 
@@ -66,15 +67,20 @@ func GetTasks() Tasks {
 					continue
 				}
 
-				//get "taskColor" for task
+				//get taskColor and name
 				fileName := file.Name()
-				splitFileName := strings.Split(fileName, "_")
+				trimmedFileName := strings.TrimSuffix(fileName, ".json")
+				splitFileName := strings.Split(trimmedFileName, "_")
 
 				var taskColor, taskName string
-				if len(splitFileName) == 2 {
-					taskColor = splitFileName[0]
-					taskName = splitFileName[1]
+
+				if len(splitFileName) < 2 {
+					log.Printf("Task file name invalid, skipping task %s\n", fileName)
+					continue
 				}
+
+				taskColor = splitFileName[0]
+				taskName = strings.Join(splitFileName[1:], " ")
 
 				filePath := filepath.Join(langTaskDirPath, fileName)
 
@@ -98,7 +104,6 @@ func GetTasks() Tasks {
 				}
 
 				tasks[langDirName][langTasksDirName] = append(tasks[langDirName][langTasksDirName], task)
-				log.Println(tasks)
 			}
 		}
 
