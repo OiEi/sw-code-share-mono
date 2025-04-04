@@ -10,6 +10,7 @@ import (
 )
 
 type Task struct {
+	Name     string `json:"name"`
 	Color    string `json:"color"`
 	Grade    string `json:"grade"`
 	Text     string `json:"text"`
@@ -65,9 +66,15 @@ func GetTasks() Tasks {
 					continue
 				}
 
-				//get "color" for task
+				//get "taskColor" for task
 				fileName := file.Name()
-				color := strings.Split(fileName, "_")[0]
+				splitFileName := strings.Split(fileName, "_")
+
+				var taskColor, taskName string
+				if len(splitFileName) == 2 {
+					taskColor = splitFileName[0]
+					taskName = splitFileName[1]
+				}
 
 				filePath := filepath.Join(langTaskDirPath, fileName)
 
@@ -83,7 +90,8 @@ func GetTasks() Tasks {
 					continue
 				}
 
-				task.Color = color
+				task.Color = taskColor
+				task.Name = taskName
 
 				if tasks[langDirName] == nil {
 					tasks[langDirName] = make(map[string][]Task)
