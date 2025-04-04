@@ -3,7 +3,6 @@ import {useEffect, useState} from "react";
 
 export const useTasksOnce = () => {
     const [data, setData] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
     const [isAuth, setIsAuth] = useState(false);
 
     useEffect(() => {
@@ -19,8 +18,8 @@ export const useTasksOnce = () => {
                     const tasks = await getTasks();
                     if (isMounted) setData(tasks);
                 }
-            } finally {
-                if (isMounted) setIsLoading(false);
+            } catch (e) {
+                return { isAuth: false }
             }
         };
 
@@ -29,5 +28,5 @@ export const useTasksOnce = () => {
         return () => { isMounted = false };
     }, []);
 
-    return { data, isLoading, isAuth };
+    return { data, isAuth };
 };
