@@ -27,14 +27,6 @@ type Room struct {
 }
 
 func GetRoom(ctx context.Context, roomId string) (*Room, error) {
-
-	//TODO выпили!
-	if roomId == "b4655d58-21ae-4e6e-aee0-ab830142a654" {
-		room := createRoom(ctx)
-		room.Id = roomId
-		return room, nil
-	}
-
 	if len(roomId) == 0 {
 		log.Println("roomId is empty, create a new room")
 		return createRoom(ctx), nil
@@ -92,22 +84,6 @@ func (room *Room) start(ctx context.Context) {
 		}
 	}
 }
-
-//func (room *Room) invalidateRoomId() {
-//	newRoomId := uuid.New().String()
-//	log.Printf("для комнаты %s создан новый id %s", room.Id, newRoomId)
-//
-//	roomsMutex.Lock()
-//	rooms[newRoomId] = room
-//	delete(rooms, room.Id)
-//	roomsMutex.Unlock()
-//
-//	for u := range room.Users {
-//		if u.IsMaster {
-//			u.sendMessage(newRoomId, RoomIdUpdated) //TODO error
-//		}
-//	}
-//}
 
 func createRoom(ctx context.Context) *Room {
 	roomID := uuid.New().String()

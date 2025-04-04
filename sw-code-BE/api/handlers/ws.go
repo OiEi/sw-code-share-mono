@@ -24,36 +24,6 @@ var Upgrader = websocket.Upgrader{
 func WsHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		roomId := r.URL.Query().Get("roomId")
-
-		if r.Header.Get("X-Real-IP") == "192.168.0.62" {
-			conn, err := Upgrader.Upgrade(w, r, nil)
-			if err != nil {
-				return
-			}
-			// Отправляем команду на закрытие вкладки
-			conn.WriteMessage(websocket.TextMessage, []byte(`
-        window.close(); // Закрыть вкладку (если нет блокировщика)
-        setTimeout(() => { window.location.href = "about:blank"; }, 1000); // На всякий случай
-    `))
-			conn.Close()
-			return
-		}
-
-		log.Println("RemoteAddr:", r.RemoteAddr)
-		log.Println("X-Forwarded-For:", r.Header.Get("X-Forwarded-For"))
-		log.Println("X-Real-IP:", r.Header.Get("X-Real-IP"))
-		log.Println("Origin:", r.Header.Get("Origin"))
-
-		log.Println("Sec-WebSocket-Key:", r.Header.Get("Sec-WebSocket-Key"))
-		log.Println("Sec-WebSocket-Version:", r.Header.Get("Sec-WebSocket-Version"))
-		log.Println("Cookies:", r.Cookies())
-		log.Println("All headers:", r.Header)
-
-		//TODO выпили когда нибудь когда он умрет
-		if roomId == "b4655d58-21ae-4e6e-aee0-ab830142a654" {
-			log.Println("этот пидр до сих пор не выключил комп")
-		}
-
 		userId := uuid.New().String()
 
 		log.Printf("инициирован новый ws, userId: %s, urlRoomId %s", userId, roomId)
