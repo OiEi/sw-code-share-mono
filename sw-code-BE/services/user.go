@@ -15,6 +15,7 @@ type User struct {
 	Socket           *websocket.Conn // all messages for Socket translate to room.Broadcast
 	SocketMutex      *sync.Mutex
 	IncomingMessages chan WsRequest // channel for messages from room(all users) to client
+	IsSubscribed     bool
 }
 
 func HandleUser(ctx context.Context, room *Room, conn *websocket.Conn, userId UserId) {
@@ -26,18 +27,16 @@ func HandleUser(ctx context.Context, room *Room, conn *websocket.Conn, userId Us
 		IncomingMessages: make(chan WsRequest),
 	}
 
-	room.Register <- user
-
 	//room will close conn and client.IncomingMessages after room.Unregister <- client
 	defer func() {
-		room.Unregister <- user
+		room.unregisterUser(user)
 	}()
 
 	user.subscribeToIncomingMessages()
+	room.registerUser(user)
+
 	user.IncomingMessages <- NewWsRequest(RoomCreated, room.Id)
 	user.IncomingMessages <- NewWsRequest(TextMessage, room.Content)
-
-	room.updateUsersCount()
 
 	var message WsRequest
 	//read messages from User and push it to Broadcast
@@ -70,6 +69,8 @@ func HandleUser(ctx context.Context, room *Room, conn *websocket.Conn, userId Us
 }
 
 func (u *User) subscribeToIncomingMessages() {
+	u.IsSubscribed = true
+
 	go func() {
 		//room will close this after room.Unregister <- client
 		for msg := range u.IncomingMessages {

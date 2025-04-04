@@ -17,8 +17,11 @@ var (
 
 // Room запускает рутину-воркер которая регает/удаляет пользователей, бродкастит сообщения между пользователями
 type Room struct {
-	Id         string
-	Users      map[User]struct{} //ключом наверное лучше сделать User.Id
+	Id              string
+	Users           map[User]struct{} //ключом наверное лучше сделать User.Id
+	UsersCountMutex sync.Mutex
+	UsersCount      int
+	//UsersCount chan int
 	Broadcast  chan WsRequest
 	Register   chan User
 	Unregister chan User
@@ -42,10 +45,6 @@ func GetRoom(ctx context.Context, roomId string) (*Room, error) {
 	}
 
 	return room, nil
-}
-
-func (room *Room) updateUsersCount() {
-	room.Broadcast <- NewWsRequest(RoomUsersCount, strconv.Itoa(len(room.Users)))
 }
 
 func (room *Room) start(ctx context.Context) {
@@ -83,6 +82,39 @@ func (room *Room) start(ctx context.Context) {
 			return
 		}
 	}
+}
+
+func (room *Room) registerUser(user User) {
+	if !user.IsSubscribed {
+		log.Println("попытка зарегать в комнате пользователя без подписки на broadcast")
+		return
+	}
+
+	room.Register <- user
+	room.changeRoomUsersCount(increaseCount)
+	room.Broadcast <- NewWsRequest(RoomUsersCount, strconv.Itoa(room.UsersCount))
+}
+
+func (room *Room) unregisterUser(user User) {
+	if len(room.Users) == 0 {
+		return
+	}
+
+	room.changeRoomUsersCount(decreaseCount)
+	room.Broadcast <- NewWsRequest(RoomUsersCount, strconv.Itoa(room.UsersCount))
+}
+
+type countChangeType int
+
+var (
+	increaseCount = countChangeType(1)
+	decreaseCount = countChangeType(-1)
+)
+
+func (room *Room) changeRoomUsersCount(value countChangeType) {
+	room.UsersCountMutex.Lock()
+	room.UsersCount += int(value)
+	room.UsersCountMutex.Unlock()
 }
 
 func createRoom(ctx context.Context) *Room {
