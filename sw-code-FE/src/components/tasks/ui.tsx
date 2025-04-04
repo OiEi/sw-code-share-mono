@@ -1,17 +1,17 @@
-import { Tasks } from "@/components/tasks/tasks.model.ts";
-import { TabItem } from "../ui/tabs/tabs.model";
-import { Tabs } from "@/components/ui/tabs/ui.tsx";
+import {Tasks} from "@/components/tasks/tasks.model.ts";
+import {TabItem} from "../ui/tabs/tabs.model";
+import {Tabs} from "@/components/ui/tabs/ui.tsx";
 import {TaskCategory} from "@/components/tasks/ui.category.tsx";
 
 interface TasksProps {
     data: Tasks;
 }
 
-export const Tasks = ({ data }: TasksProps) => {
+export const Tasks = ({data}: TasksProps) => {
     if (!data) {
         return null;
     }
-    console.log(data)
+
     const tabs: TabItem[] = Object.entries(data).map(([language, categories]) => ({
         label: language,
         id: language,
@@ -28,5 +28,5 @@ export const Tasks = ({ data }: TasksProps) => {
         )
     }));
 
-    return <Tabs tabs={tabs} className="h-full" />;
+    return <Tabs tabs={tabs} className="h-full"/>;
 };

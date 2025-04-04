@@ -32,11 +32,7 @@ export const useTasksOnce = (): {
         return () => { isMounted = false };
     }, []);
 
-    console.log(data)
-
     const returnedData = data as Tasks
-    console.log(returnedData)
-
 
     return { data: returnedData, isAuth };
 };

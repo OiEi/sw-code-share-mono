@@ -6,9 +6,18 @@ interface TaskItemProps {
 }
 
 export const TaskItem = ({ task }: TaskItemProps) => {
-    const renderDifficulty = (color: string) => (
-        <div className={`w-[8px] h-[8px] bg-${color}-500 rounded-full`}/>
-    )
+    const renderDifficulty = (color: string) => {
+        switch (color) {
+            case 'green':
+                return <div className={`w-[8px] h-[8px] bg-green-500 rounded-full`}/>
+            case 'red':
+                return <div className={`w-[8px] h-[8px] bg-red-500 rounded-full`}/>
+            case 'yellow':
+                return <div className={`w-[8px] h-[8px] bg-blue-500 rounded-full`}/>
+            default:
+                return <div className={`w-[8px] h-[8px] bg-blue-500 rounded-full`}/>
+        }
+    }
 
     return (
         <Accordion
