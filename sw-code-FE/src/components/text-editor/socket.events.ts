@@ -3,5 +3,7 @@ export const enum Events {
     TextMessage,
     RoomCreated,
     RoomIdUpdated,
-    RoomUsersCount
+    RoomUsersCount,
+
+    EmergencyEvent = 911,
 }

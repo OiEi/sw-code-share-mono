@@ -4,6 +4,7 @@ import SharedTextEditor from "@/components/text-editor/ui.tsx";
 import {PeopleIcon} from "@/components/ui/icons/people-icon.tsx";
 import * as process from "process";
 import {getFullWsRoute, ROUTES} from "@/lib/constant/api.routes.ts";
+import {useTasks, useTasksOnce} from "@/components/tasks/tasks.query.ts";
 
 const Index = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -13,6 +14,8 @@ const Index = () => {
     const [peopleCount, setPeopleCount] = useState(0)
 
     const roomIdForCopy = useRef('')
+
+    const { data, isLoading, isAuth } = useTasksOnce();
 
     useEffect(() => {
         if (currentRoomId) {
@@ -74,6 +77,7 @@ const Index = () => {
                     }}
                     setPeopleCount={count => { setPeopleCount(count) }}
                 />
+                {data}
             </div>
         </div>
     );
