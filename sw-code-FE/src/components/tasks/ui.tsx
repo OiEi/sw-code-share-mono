@@ -19,6 +19,7 @@ export const Tasks = ({data}: TasksProps) => {
             <div className="space-y-2">
                 {Object.entries(categories).map(([categoryName, tasks]) => (
                     <TaskCategory
+                        language={language}
                         key={`${language}-${categoryName}`}
                         categoryName={categoryName}
                         tasks={tasks}

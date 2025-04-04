@@ -1,11 +1,13 @@
 import {CodeSlice} from "@/components/tasks/tasks.model.ts";
 import {Accordion} from "@/components/ui/accordion/ui.tsx";
+import {CodeBlock} from "@/components/code-block/ui.tsx";
 
 interface TaskItemProps {
     task: CodeSlice;
+    language?: string
 }
 
-export const TaskItem = ({ task }: TaskItemProps) => {
+export const TaskItem = ({task, language}: TaskItemProps) => {
     const renderDifficulty = (color: string) => {
         switch (color) {
             case 'green':
@@ -25,7 +27,11 @@ export const TaskItem = ({ task }: TaskItemProps) => {
                 className={'flex gap-2 items-center'}>{task.name ?? task.grade} {renderDifficulty(task.color)}</div>}
         >
             <div className={'flex-col flex gap-2'}>
-                <div className={'font-bold'}>{task.text}</div>
+                <CodeBlock
+                    language={language}
+                    code={task.text}
+                />
+
                 <div className={'font-bold'}>{task.solution}</div>
             </div>
         </Accordion>

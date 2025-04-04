@@ -5,9 +5,10 @@ import {TaskItem} from "@/components/tasks/ui.item.tsx";
 interface TaskCategoryProps {
     categoryName: string;
     tasks: CodeSlice[];
+    language?: string;
 }
 
-export const TaskCategory = ({ categoryName, tasks }: TaskCategoryProps) => {
+export const TaskCategory = ({ categoryName, tasks, language }: TaskCategoryProps) => {
     return (
         <Accordion
             title={
@@ -22,6 +23,7 @@ export const TaskCategory = ({ categoryName, tasks }: TaskCategoryProps) => {
             <div className="space-y-1 pl-2">
                 {tasks.map((task, index) => (
                     <TaskItem
+                        language={language}
                         key={`${categoryName}-${index}`}
                         task={task}
                     />
