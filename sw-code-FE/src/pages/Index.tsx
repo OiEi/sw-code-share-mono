@@ -47,6 +47,21 @@ const Index = () => {
         )
     }
 
+    const code = `
+    func main() {
+        s1 := make([]account, 0, 2)
+        s1 = append(s1, account{})
+        s2 := append(s1, account{})
+
+        acc := &s2[0]
+        acc.value = 10
+        fmt.Println(s1, s2) //что выведет
+
+        s1 = append(s2, account{})
+        acc.value += 10
+        fmt.Println(s1, s2) //что выведет
+}`
+
     const toggleSidebar = () => {
         setIsSidebarOpen(!isSidebarOpen);
     };

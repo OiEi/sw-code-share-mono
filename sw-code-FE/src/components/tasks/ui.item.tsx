@@ -27,11 +27,17 @@ export const TaskItem = ({task, language}: TaskItemProps) => {
                 className={'flex gap-2 items-center'}>{task.name ?? task.grade} {renderDifficulty(task.color)}</div>}
         >
             <div className={'flex-col flex gap-2'}>
+                <div className={'text-4xl font-bold'}>
+                    Code
+                </div>
                 <CodeBlock
                     language={language}
                     code={task.text}
                 />
-                <div className={'bg-green-200 p-2 rounded-xl'}>
+                <div className={'text-4xl font-bold mt-4'}>
+                    Solution
+                </div>
+                <div className={'bg-green-200 p-2 rounded-xl italic'}>
                     {task.solution}
                 </div>
             </div>
