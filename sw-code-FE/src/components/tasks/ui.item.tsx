@@ -31,8 +31,9 @@ export const TaskItem = ({task, language}: TaskItemProps) => {
                     language={language}
                     code={task.text}
                 />
-
-                <div className={'font-bold'}>{task.solution}</div>
+                <div className={'bg-green-200 p-2 rounded-xl'}>
+                    {task.solution}
+                </div>
             </div>
         </Accordion>
     );

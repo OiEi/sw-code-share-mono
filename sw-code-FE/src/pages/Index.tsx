@@ -5,6 +5,7 @@ import {PeopleIcon} from "@/components/ui/icons/people-icon.tsx";
 import {getFullWsRoute, ROUTES} from "@/lib/constant/api.routes.ts";
 import {Tasks} from "@/components/tasks/ui.tsx";
 import {useTasksOnce} from "@/components/tasks/tasks.hook.ts";
+import {CodeBlock} from "@/components/code-block/ui.tsx";
 
 const Index = () => {
     const [searchParams, setSearchParams] = useSearchParams();
