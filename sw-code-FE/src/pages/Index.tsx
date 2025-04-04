@@ -2,6 +2,8 @@ import {useState, useEffect, useRef} from 'react';
 import {useSearchParams} from 'react-router-dom';
 import SharedTextEditor from "@/components/text-editor/ui.tsx";
 import {PeopleIcon} from "@/components/ui/icons/people-icon.tsx";
+import * as process from "process";
+import {getFullWsRoute, ROUTES} from "@/lib/constant/api.routes.ts";
 
 const Index = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -20,9 +22,7 @@ const Index = () => {
         }
     }, [currentRoomId, setSearchParams]);
 
-    const websocketUrl = `${
-        window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    }//code-interview.smartway.today/api/ws?roomId=${currentRoomId || ''}`;
+    const websocketUrl = getFullWsRoute(ROUTES.WS(currentRoomId));
 
     const renderCopyButton = () => {
         if (!roomIdForCopy.current) {

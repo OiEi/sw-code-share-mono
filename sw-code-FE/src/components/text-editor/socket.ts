@@ -46,8 +46,8 @@ export const onClose = (
         }
 
         if (e.code == 1006) {
-
-            onRedirect();
+            console.log('Socket is closed')
+            // onRedirect();
         }
     };
 }
