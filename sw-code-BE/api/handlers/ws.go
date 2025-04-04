@@ -23,6 +23,13 @@ var Upgrader = websocket.Upgrader{
 // WsHandler назначает room пользователю и открывает websocket соединение в рамках комнаты
 func WsHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		conn, err := createWSConnection(w, r)
+		if err != nil {
+			fmt.Println("не удалось открыть wsConnection")
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		
 		roomId := r.URL.Query().Get("roomId")
 		userId := uuid.New().String()
 
@@ -35,13 +42,6 @@ func WsHandler() func(http.ResponseWriter, *http.Request) {
 		if err != nil {
 			fmt.Printf("не удалось получить комнату для roomId %s\n", roomId)
 			http.Error(w, err.Error(), http.StatusNotFound)
-			return
-		}
-
-		conn, err := createWSConnection(w, r)
-		if err != nil {
-			fmt.Println("не удалось открыть wsConnection")
-			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
