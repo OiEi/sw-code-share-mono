@@ -1,10 +1,10 @@
-import {defineConfig, loadEnv} from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import {componentTagger} from "lovable-tagger";
+import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
-export default defineConfig(({mode}) => {
+export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd(), '');
 
     return {
@@ -14,13 +14,13 @@ export default defineConfig(({mode}) => {
             port: 3000,
             strictPort: true,
             hmr: {
-                host: "code-interview.smartway.today"
+                host: "code-interview.smartway.today",
+                protocol: "wss" // добавьте, если используете HTTPS
             },
         },
         plugins: [
             react(),
-            mode === 'development' &&
-            componentTagger(),
+            mode === 'development' && componentTagger()
         ].filter(Boolean),
         resolve: {
             alias: {
@@ -28,7 +28,16 @@ export default defineConfig(({mode}) => {
             },
         },
         define: {
-            'process-env': env
+            // Правильное определение process.env
+            'process.env': env,
+            // Для глобальных переменных
+            __APP_ENV__: JSON.stringify(env.APP_ENV),
+        },
+        // Опционально: настройки для сборки
+        build: {
+            outDir: "dist",
+            emptyOutDir: true,
+            sourcemap: mode === 'development'
         }
     }
-}
+});
