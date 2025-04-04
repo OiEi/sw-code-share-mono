@@ -6,5 +6,5 @@ export const ROUTES = {
     AUTH: `/auth`
 }
 
-export const getFullRoute = (url: string) => `${window.location.protocol}//${apiUrl}${url}`
+export const getFullRoute = (url: string) => `https://${apiUrl}${url}`
 export const getFullWsRoute = (url: string) => `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${apiUrl}${url}`

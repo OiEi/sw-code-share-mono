@@ -16,7 +16,7 @@ export default defineConfig(({ mode }) => {
             hmr: {
                 host: "code-interview.smartway.today",
                 protocol: "wss" // добавьте, если используете HTTPS
-            },
+            }
         },
         plugins: [
             react(),

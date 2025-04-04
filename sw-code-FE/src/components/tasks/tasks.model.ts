@@ -3,6 +3,7 @@ type CodeSlice = {
     grade: string;
     text: string;
     solution: string;
+    name?: string;
 }
 
 type LanguageCategory = {
@@ -13,4 +14,4 @@ type Tasks = {
     [language: string]: LanguageCategory;
 }
 
-export type { Tasks }
+export type { Tasks, LanguageCategory, CodeSlice }

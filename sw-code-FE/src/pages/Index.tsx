@@ -2,8 +2,8 @@ import {useState, useEffect, useRef, memo} from 'react';
 import {useSearchParams} from 'react-router-dom';
 import SharedTextEditor from "@/components/text-editor/ui.tsx";
 import {PeopleIcon} from "@/components/ui/icons/people-icon.tsx";
-import * as process from "process";
 import {getFullWsRoute, ROUTES} from "@/lib/constant/api.routes.ts";
+import {Tasks} from "@/components/tasks/ui.tsx";
 import {useTasksOnce} from "@/components/tasks/tasks.hook.ts";
 
 const Index = () => {
@@ -13,7 +13,8 @@ const Index = () => {
     const [, setIsConnected] = useState(false);
     const [peopleCount, setPeopleCount] = useState(0)
     const roomIdForCopy = useRef('')
-    const {data, isLoading, isAuth} = useTasksOnce();
+    const {data, isAuth} = useTasksOnce();
+
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
     useEffect(() => {
@@ -40,7 +41,6 @@ const Index = () => {
                     )
                 }
             >
-                {/*<CopyIcon className="mr-2 h-4 w-4"/>*/}
                 Copy link
             </button>
         )
@@ -62,7 +62,7 @@ const Index = () => {
 
         return (
             <div>
-                {JSON.stringify(data)}
+                <Tasks data={data}/>
             </div>
         )
     }
@@ -78,7 +78,7 @@ const Index = () => {
                 className={`absolute top-1/2 -translate-y-1/2 z-10 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-all
                             ${isSidebarOpen ? 'right-[calc(50%-16px)]' : 'right-0'}`}
             >
-                {isSidebarOpen ? '<' : '>'}
+                {isSidebarOpen ? '>' : '<'}
             </button>
         );
     }
@@ -117,11 +117,11 @@ const Index = () => {
                     {renderSidebarButton()}
 
                     <div
-                        className={`fixed top-0 right-0 h-full bg-white shadow-lg transition-all duration-300 z-20
+                        className={`fixed top-0 rounded-l-2xl border-neutral-600 border-2 right-0 h-full bg-white shadow-lg transition-all duration-300 z-20
                             ${isSidebarOpen ? 'w-1/2 translate-x-0' : 'w-0 translate-x-full'}`}
                         style={{
-                            marginTop: '80px', // Высота хедера
-                            height: 'calc(100vh - 80px)'
+                            marginTop: '5rem',
+                            height: 'calc(100vh - 5rem)'
                         }}
                     >
                         <div className="p-4 h-full overflow-y-auto">

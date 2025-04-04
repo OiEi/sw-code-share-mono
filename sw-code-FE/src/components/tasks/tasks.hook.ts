@@ -1,7 +1,11 @@
 import {auth, getTasks} from "@/components/tasks/tasks.api.ts";
 import {useEffect, useState} from "react";
+import {Tasks} from "@/components/tasks/tasks.model.ts";
 
-export const useTasksOnce = () => {
+export const useTasksOnce = (): {
+    data: Tasks
+    isAuth: boolean
+} => {
     const [data, setData] = useState(null);
     const [isAuth, setIsAuth] = useState(false);
 
@@ -28,5 +32,7 @@ export const useTasksOnce = () => {
         return () => { isMounted = false };
     }, []);
 
-    return { data, isAuth };
+    const returnedData = data as Tasks
+
+    return { data: returnedData, isAuth };
 };
