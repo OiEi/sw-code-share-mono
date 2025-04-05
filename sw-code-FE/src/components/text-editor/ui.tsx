@@ -1,19 +1,7 @@
 import {useState, useEffect, useRef, useCallback} from 'react';
-import Editor from "react-simple-code-editor";
-import Prism from 'prismjs';
-
-import 'prismjs/components/prism-clike';
-import 'prismjs/components/prism-javascript';
-
-import 'prismjs/themes/prism.css';
-import 'prismjs/themes/prism-tomorrow.css';
-
-import 'prismjs/components/prism-go';
-import 'prismjs/components/prism-csharp';
-
-import '@/lib/theme/index.css'
 
 import {ToolBar} from "@/components/toolbar/ui.tsx";
+import {CodeEditor} from "@/components/code-editor/ui.tsx";
 
 import {onClose, onError, onMessage, onOpen} from "@/components/text-editor/socket.ts";
 
@@ -21,24 +9,28 @@ import {Theme} from "@/lib/theme/theme.type.ts";
 import {PageSettings} from "@/components/toolbar/page-settings.ts";
 
 import {themes} from "@/lib/theme/theme.ts";
+import {Events} from "@/components/text-editor/socket.events.ts";
+
 import {useDebouncedCallback} from "@/lib/hooks/useDebounce.ts";
 import {useSearchParams} from "react-router-dom";
-import {Events} from "@/components/text-editor/socket.events.ts";
 
 interface SharedTextEditorProps {
     websocketUrl: string;
     setRoomIdForCopy: (newRoomId: string) => void;
     onConnectionChange: (connected: boolean) => void;
     setPeopleCount: (count: number) => void;
+    rawText: string;
+    setRawText: (code: string) => void;
 }
 
 const SharedTextEditor = ({
                               websocketUrl,
                               setRoomIdForCopy,
                               onConnectionChange,
-                              setPeopleCount
+                              setPeopleCount,
+                              rawText,
+                              setRawText
                           }: SharedTextEditorProps) => {
-    const [rawText, setRawText] = useState('');
     const socketRef = useRef<WebSocket | null>(null);
     const pingIntervalRef = useRef<number | null>(null);
     const isMountedRef = useRef(false);
@@ -114,18 +106,6 @@ const SharedTextEditor = ({
         debouncedSendText(text)
     };
 
-    const handleHighlightCode = (code: string) => {
-        switch (pageSettings.language) {
-            case 'go':
-                return Prism.highlight(code, Prism.languages.go, 'go');
-            case 'csharp':
-                return Prism.highlight(code, Prism.languages.csharp, 'csharp');
-            case 'javascript':
-            default:
-                return Prism.highlight(code, Prism.languages.javascript, 'javascript');
-        }
-    };
-
     return (
         <div className="bg-white border rounded-2xl border-gray-200 min-h-[calc(100vh-8rem)]">
             <ToolBar
@@ -134,20 +114,11 @@ const SharedTextEditor = ({
                 setPageSettings={setPageSettings}
                 setCurrentTheme={setCurrentTheme}
             />
-            <Editor
-                className={`min-h-[calc(100vh-8rem)] ${currentTheme.editorBg} ${currentTheme.editorText} prism-${currentTheme.value}`}
-                value={rawText}
-                onValueChange={code => handleTextChange(code)}
-                highlight={handleHighlightCode}
-                padding={10}
-                style={{
-                    fontFamily: '"Fira code", "Fira Mono", monospace',
-                    fontSize: Number(pageSettings.font),
-                    borderBottomLeftRadius: '1rem',
-                    borderBottomRightRadius: '1rem'
-                }}
-                textareaClassName={`focus:outline-none focus:ring-0 border-0`}
-                preClassName={`border-0 focus:outline-none`}
+            <CodeEditor
+                code={rawText}
+                onCodeChange={code => handleTextChange(code)}
+                pageSettings={pageSettings}
+                currentTheme={currentTheme}
             />
         </div>
     );

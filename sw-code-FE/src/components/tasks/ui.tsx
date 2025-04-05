@@ -5,9 +5,10 @@ import {TaskCategory} from "@/components/tasks/ui.category.tsx";
 
 interface TasksProps {
     data: Tasks;
+    setText: (code: string) => void;
 }
 
-export const Tasks = ({data}: TasksProps) => {
+export const Tasks = ({data, setText}: TasksProps) => {
     if (!data) {
         return null;
     }
@@ -19,6 +20,7 @@ export const Tasks = ({data}: TasksProps) => {
             <div className="space-y-2">
                 {Object.entries(categories).map(([categoryName, tasks]) => (
                     <TaskCategory
+                        setText={setText}
                         language={language}
                         key={`${language}-${categoryName}`}
                         categoryName={categoryName}

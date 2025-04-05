@@ -1,13 +1,15 @@
 import {CodeSlice} from "@/components/tasks/tasks.model.ts";
 import {Accordion} from "@/components/ui/accordion/ui.tsx";
 import {CodeBlock} from "@/components/code-block/ui.tsx";
+import {Button} from "@/components/ui/button/ui.tsx";
 
 interface TaskItemProps {
     task: CodeSlice;
+    setText: (code: string) => void;
     language?: string
 }
 
-export const TaskItem = ({task, language}: TaskItemProps) => {
+export const TaskItem = ({task, language, setText}: TaskItemProps) => {
     const renderDifficulty = (color: string) => {
         switch (color) {
             case 'green':
@@ -34,6 +36,9 @@ export const TaskItem = ({task, language}: TaskItemProps) => {
                     language={language}
                     code={task.text}
                 />
+                <Button variant="danger" onClick={() => setText(task.text)}>
+                    Pull this task
+                </Button>
                 <div className={'text-4xl font-bold mt-4'}>
                     Solution
                 </div>

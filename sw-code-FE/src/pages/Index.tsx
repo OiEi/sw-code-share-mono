@@ -5,7 +5,6 @@ import {PeopleIcon} from "@/components/ui/icons/people-icon.tsx";
 import {getFullWsRoute, ROUTES} from "@/lib/constant/api.routes.ts";
 import {Tasks} from "@/components/tasks/ui.tsx";
 import {useTasksOnce} from "@/components/tasks/tasks.hook.ts";
-import {CodeBlock} from "@/components/code-block/ui.tsx";
 
 const Index = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -15,6 +14,7 @@ const Index = () => {
     const [peopleCount, setPeopleCount] = useState(0)
     const roomIdForCopy = useRef('')
     const {data, isAuth} = useTasksOnce();
+    const [text, setText] = useState('');
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
@@ -46,21 +46,6 @@ const Index = () => {
             </button>
         )
     }
-
-    const code = `
-    func main() {
-        s1 := make([]account, 0, 2)
-        s1 = append(s1, account{})
-        s2 := append(s1, account{})
-
-        acc := &s2[0]
-        acc.value = 10
-        fmt.Println(s1, s2) //что выведет
-
-        s1 = append(s2, account{})
-        acc.value += 10
-        fmt.Println(s1, s2) //что выведет
-}`
 
     const toggleSidebar = () => {
         setIsSidebarOpen(!isSidebarOpen);
@@ -127,6 +112,8 @@ const Index = () => {
                             setPeopleCount={count => {
                                 setPeopleCount(count)
                             }}
+                            rawText={text}
+                            setRawText={(code: string) => setText(code)}
                         />
                     </div>
 

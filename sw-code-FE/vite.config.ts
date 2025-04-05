@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => {
             strictPort: true,
             hmr: {
                 host: "code-interview.smartway.today",
-                protocol: "wss" // добавьте, если используете HTTPS
+                protocol: "wss"
             }
         },
         plugins: [
@@ -28,12 +28,9 @@ export default defineConfig(({ mode }) => {
             },
         },
         define: {
-            // Правильное определение process.env
             'process.env': env,
-            // Для глобальных переменных
             __APP_ENV__: JSON.stringify(env.APP_ENV),
         },
-        // Опционально: настройки для сборки
         build: {
             outDir: "dist",
             emptyOutDir: true,

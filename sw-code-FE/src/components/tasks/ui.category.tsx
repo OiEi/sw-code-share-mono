@@ -6,9 +6,10 @@ interface TaskCategoryProps {
     categoryName: string;
     tasks: CodeSlice[];
     language?: string;
+    setText: (code: string) => void;
 }
 
-export const TaskCategory = ({ categoryName, tasks, language }: TaskCategoryProps) => {
+export const TaskCategory = ({ categoryName, tasks, language, setText }: TaskCategoryProps) => {
     return (
         <Accordion
             title={
@@ -23,6 +24,7 @@ export const TaskCategory = ({ categoryName, tasks, language }: TaskCategoryProp
             <div className="space-y-1 pl-2">
                 {tasks.map((task, index) => (
                     <TaskItem
+                        setText={setText}
                         language={language}
                         key={`${categoryName}-${index}`}
                         task={task}
