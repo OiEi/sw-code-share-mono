@@ -25,11 +25,11 @@ func WsHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		conn, err := createWSConnection(w, r)
 		if err != nil {
-			fmt.Println("не удалось открыть wsConnection")
+			log.Println("не удалось открыть wsConnection")
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		
+
 		roomId := r.URL.Query().Get("roomId")
 		userId := uuid.New().String()
 
@@ -48,9 +48,9 @@ func WsHandler() func(http.ResponseWriter, *http.Request) {
 		defer func() {
 			err = conn.Close()
 			if err != nil {
-				fmt.Println("не удалось закрыть websocket")
+				log.Println("не удалось закрыть websocket")
 			}
-			fmt.Printf("websocket соединение клиента %s закрыто\n", userId)
+			log.Printf("websocket соединение клиента %s закрыто\n", userId)
 		}()
 
 		userLifeTimeCtx, cancel := context.WithTimeout(roomCtx, _userLifetime)

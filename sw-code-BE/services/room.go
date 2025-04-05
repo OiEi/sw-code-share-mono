@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"fmt"
 	"github.com/google/uuid"
 	"log"
 	"strconv"
@@ -51,7 +50,7 @@ func (room *Room) start(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			fmt.Printf("room %s lifetime exeeded", room.Id)
+			log.Printf("room %s lifetime exeeded\n", room.Id)
 			return
 
 		case user := <-room.Register:
