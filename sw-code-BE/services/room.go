@@ -84,7 +84,7 @@ func (room *Room) start(ctx context.Context) {
 		}
 
 		if len(room.Users) == 0 {
-			log.Println("комната опустела")
+			log.Printf("room was empty, delete room %s\n", room.Id)
 			roomsMutex.Lock()
 			delete(rooms, room.Id)
 			roomsMutex.Unlock()
@@ -95,7 +95,7 @@ func (room *Room) start(ctx context.Context) {
 
 func (room *Room) registerUser(user User) {
 	if !user.IsSubscribed {
-		log.Println("попытка зарегать в комнате пользователя без подписки на broadcast")
+		log.Println("attempt to register user without subscription to broadcast")
 		return
 	}
 
