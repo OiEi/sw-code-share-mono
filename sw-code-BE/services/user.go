@@ -4,23 +4,23 @@ import (
 	"context"
 	"github.com/gorilla/websocket"
 	"log"
+	"sync/atomic"
 )
 
 type UserId string
 
 type User struct {
 	Id               UserId
-	RoomID           string          //not using
+	IncomingMessages chan WsRequest // channel for messages from room(all users) to client
+	IsSocketOpen     *atomic.Bool
 	socket           *websocket.Conn // all messages for socket translate to room.Broadcast
-	IncomingMessages chan WsRequest  // channel for messages from room(all users) to client
-	IsSubscribed     bool
 }
 
 func HandleUser(ctx context.Context, room *Room, conn *websocket.Conn, userId UserId) {
 	user := User{
 		Id:               userId,
-		RoomID:           room.Id,
 		IncomingMessages: make(chan WsRequest),
+		IsSocketOpen:     &atomic.Bool{},
 		socket:           conn,
 	}
 
@@ -29,9 +29,9 @@ func HandleUser(ctx context.Context, room *Room, conn *websocket.Conn, userId Us
 		room.unregisterUser(user)
 	}()
 
-	user.subscribeToIncomingMessages()
-	room.registerUser(user)
+	user.subscribeToIncomingMessages(room)
 
+	room.registerUser(user)
 	user.IncomingMessages <- NewWsRequest(RoomCreated, room.Id)
 	user.IncomingMessages <- NewWsRequest(TextMessage, room.Content)
 
@@ -44,9 +44,9 @@ func HandleUser(ctx context.Context, room *Room, conn *websocket.Conn, userId Us
 			return
 		default:
 			err := user.socket.ReadJSON(&message)
-			if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) ||
-				websocket.IsUnexpectedCloseError(err, websocket.CloseAbnormalClosure) {
+			if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("user %s closed the connection: %s\n", userId, err)
+				user.unregister()
 				return
 			}
 
@@ -66,10 +66,10 @@ func HandleUser(ctx context.Context, room *Room, conn *websocket.Conn, userId Us
 	}
 }
 
-func (u *User) subscribeToIncomingMessages() {
-	u.IsSubscribed = true
-	go func() {
-		//room will close this after room.Unregister <- client
+func (u *User) subscribeToIncomingMessages(room *Room) {
+	u.IsSocketOpen.Store(true)
+
+	go func() { //room will close IncomingMessages after room.Unregister <- user
 		for msg := range u.IncomingMessages {
 			if len(msg.Message) == 0 {
 				continue
@@ -77,18 +77,22 @@ func (u *User) subscribeToIncomingMessages() {
 
 			err := u.socket.WriteJSON(msg)
 			if err != nil {
-				log.Printf("failed send to client %s,\n err %s,\n msg:  %v\n", u.Id, err.Error(), msg)
+				log.Printf("failed send to client %s, err %s, msg:  %v\n", u.Id, err.Error(), msg)
 			}
 
-			if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
-				log.Printf("user %s socket.WriteJSON for closed\n", u.Id)
-				err = u.socket.Close()
-				if err != nil {
-					log.Printf("failed close socket for user %s: %s\n", u.Id, err)
-				}
-				
+			if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				log.Printf("user %s try write to closed socket\n", u.Id)
+				u.unregister()
 				return
 			}
 		}
+
+		room.unregisterUser(*u)
 	}()
+}
+
+func (u *User) unregister() {
+	u.IsSocketOpen.Store(false)
+	close(u.IncomingMessages)
+	_ = u.socket.Close()
 }

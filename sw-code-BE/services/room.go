@@ -62,7 +62,6 @@ func (room *Room) start(ctx context.Context) {
 			}
 
 			delete(room.Users, user.Id)
-			close(user.IncomingMessages)
 
 		case message := <-room.Broadcast:
 
@@ -79,6 +78,10 @@ func (room *Room) start(ctx context.Context) {
 			}
 
 			for _, user := range room.Users {
+				if !user.IsSocketOpen.Load() {
+					continue
+				}
+
 				user.IncomingMessages <- message
 			}
 		}
@@ -94,7 +97,7 @@ func (room *Room) start(ctx context.Context) {
 }
 
 func (room *Room) registerUser(user User) {
-	if !user.IsSubscribed {
+	if !user.IsSocketOpen.Load() {
 		log.Println("attempt to register user without subscription to broadcast")
 		return
 	}

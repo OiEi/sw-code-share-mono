@@ -45,12 +45,10 @@ func WsHandler() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
+		//конекшн закрывает сам user, тут просто на всякий. если conn уже закрыт, будет ошибка, но нам похеру
 		defer func() {
-			err = conn.Close()
-			if err != nil {
-				log.Println("не удалось закрыть websocket")
-			}
-			log.Printf("websocket соединение клиента %s закрыто\n", userId)
+			_ = conn.Close()
+			log.Println("WsHandler задеферил conn.Close()")
 		}()
 
 		userLifeTimeCtx, cancel := context.WithTimeout(roomCtx, _userLifetime)
