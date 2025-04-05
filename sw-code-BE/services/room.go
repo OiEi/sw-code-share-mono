@@ -17,15 +17,15 @@ var (
 // Room запускает рутину-воркер которая регает/удаляет пользователей, бродкастит сообщения между пользователями
 type Room struct {
 	Id              string
-	Users           map[User]struct{} //ключом наверное лучше сделать User.Id
-	UsersCountMutex sync.Mutex
+	Users           map[UserId]User //ключом наверное лучше сделать User.Id
+	UsersCountMutex *sync.Mutex
 	UsersCount      int
 	//UsersCount chan int
 	Broadcast  chan WsRequest
 	Register   chan User
 	Unregister chan User
 	Content    string
-	ContentMux sync.RWMutex //бездумно прекрыл жёпу, по факту на 1 экземпляр Room крутится 1 рутинка, так что рейса не должно быть
+	ContentMux *sync.Mutex //бездумно прекрыл жёпу, по факту на 1 экземпляр Room крутится 1 рутинка, так что рейса не должно быть
 }
 
 func GetRoom(ctx context.Context, roomId string) (*Room, error) {
@@ -54,17 +54,23 @@ func (room *Room) start(ctx context.Context) {
 			return
 
 		case user := <-room.Register:
-			room.Users[user] = struct{}{}
+			room.Users[user.Id] = user
 
 		case user := <-room.Unregister:
-			if _, ok := room.Users[user]; !ok {
+			if _, ok := room.Users[user.Id]; !ok {
 				continue
 			}
 
-			delete(room.Users, user)
+			delete(room.Users, user.Id)
 			close(user.IncomingMessages)
 
 		case message := <-room.Broadcast:
+
+			if len(room.Users) == 0 {
+				log.Println("попытка бродкаста в пустую комнату")
+				return // Выходим, если нет пользователей
+			}
+
 			//обновляем контент комнаты для отображения текущего состояния комнаты новым пользователям
 			if message.Type == TextMessage {
 				room.ContentMux.Lock()
@@ -72,12 +78,16 @@ func (room *Room) start(ctx context.Context) {
 				room.ContentMux.Unlock()
 			}
 
-			for user := range room.Users {
+			for _, user := range room.Users {
 				user.IncomingMessages <- message
 			}
 		}
 
 		if len(room.Users) == 0 {
+			log.Println("комната опустела")
+			roomsMutex.Lock()
+			delete(rooms, room.Id)
+			roomsMutex.Unlock()
 			return
 		}
 	}
@@ -100,6 +110,7 @@ func (room *Room) unregisterUser(user User) {
 	}
 
 	room.changeRoomUsersCount(decreaseCount)
+	room.Unregister <- user
 	room.Broadcast <- NewWsRequest(RoomUsersCount, strconv.Itoa(room.UsersCount))
 }
 
@@ -119,11 +130,13 @@ func (room *Room) changeRoomUsersCount(value countChangeType) {
 func createRoom(ctx context.Context) *Room {
 	roomID := uuid.New().String()
 	room := Room{
-		Id:         roomID,
-		Users:      make(map[User]struct{}),
-		Broadcast:  make(chan WsRequest),
-		Register:   make(chan User),
-		Unregister: make(chan User),
+		Id:              roomID,
+		Users:           make(map[UserId]User),
+		UsersCountMutex: &sync.Mutex{},
+		ContentMux:      &sync.Mutex{},
+		Broadcast:       make(chan WsRequest),
+		Register:        make(chan User),
+		Unregister:      make(chan User),
 	}
 
 	roomsMutex.Lock()
