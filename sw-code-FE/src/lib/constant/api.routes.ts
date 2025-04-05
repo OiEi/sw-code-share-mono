@@ -2,7 +2,7 @@ const apiUrl = import.meta.env.VITE_API_HOST;
 
 export const ROUTES = {
     WS: (roomId?: string) => `/api/ws?roomId=${roomId || ''}`,
-    GET_TASKS: `/api/task`,
+    GET_TASKS: `/auth/task`,
     AUTH: `/auth`
 }
 
