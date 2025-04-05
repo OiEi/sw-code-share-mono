@@ -46,7 +46,9 @@ func HandleUser(ctx context.Context, room *Room, conn *websocket.Conn, userId Us
 			log.Printf("user %s life time exceeded.\n", user.Id)
 			return
 		default:
+			user.SocketMutex.Lock()
 			err := user.Socket.ReadJSON(&message)
+			user.SocketMutex.Unlock()
 			if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
 				log.Printf("user %s closed the connection: %s\n", userId, err)
 				return
@@ -54,7 +56,7 @@ func HandleUser(ctx context.Context, room *Room, conn *websocket.Conn, userId Us
 
 			if err != nil {
 				log.Printf("err conn.ReadMessage() from user %s: - %s\n", userId, err)
-				continue
+				return
 			}
 
 			log.Printf("message received from room %s for user %s: - %v\n", room.Id, userId, message)
