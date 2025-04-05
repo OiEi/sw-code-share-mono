@@ -63,7 +63,10 @@ const Index = () => {
 
         return (
             <div>
-                <Tasks data={data}/>
+                <Tasks
+                    data={data}
+                    setText={(code: string) => setText(code)}
+                />
             </div>
         )
     }
