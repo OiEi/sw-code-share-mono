@@ -122,11 +122,12 @@ func (room *Room) registerUser(user User) {
 
 func (room *Room) unregisterUser(user User) {
 	if len(room.Users) == 0 {
+		log.Println("attempt to unregister user from empty room")
 		return
 	}
 
-	room.changeRoomUsersCount(decreaseCount)
 	room.Unregister <- user
+	room.changeRoomUsersCount(decreaseCount)
 	room.Broadcast <- NewWsRequest(RoomUsersCount, strconv.Itoa(int(room.UsersCount.Load())))
 }
 

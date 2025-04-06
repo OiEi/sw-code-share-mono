@@ -14,10 +14,9 @@ import (
 const port = ":8080"
 
 func main() {
-
 	server := api.NewServer(port)
 
-	fmt.Printf("сервер слушает на порту %s... \n", port)
+	fmt.Printf("server listen port %s... \n", port)
 
 	err := server.ListenAndServe()
 	if err != nil {
@@ -31,7 +30,11 @@ func waitTerminate(server *http.Server) {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	<-sigChan
-	fmt.Println("получен syscall.SIGTERM, завершаем работу сервера...")
-	server.Shutdown(context.Background())
-	fmt.Println("сервер остановлен")
+	fmt.Println("syscall.SIGTERM signal received, stopping server...")
+	err := server.Shutdown(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("server shutdown successfully")
 }

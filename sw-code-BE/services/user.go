@@ -24,7 +24,6 @@ func HandleUser(ctx context.Context, room *Room, conn *websocket.Conn, userId Us
 		socket:           conn,
 	}
 
-	//room will close conn and client.IncomingMessages after room.Unregister <- client
 	defer func() {
 		room.unregisterUser(user)
 	}()

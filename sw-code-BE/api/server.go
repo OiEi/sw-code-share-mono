@@ -18,11 +18,6 @@ func NewServer(port string) *http.Server {
 
 	mux.HandleFunc("/task", handlers.TasksHandler())
 
-	//_, err := os.Stat("index.html")
-	//if os.IsNotExist(err) {
-	//	fmt.Println("Файл index.html не найден!")
-	//}
-
 	return &http.Server{
 		Addr:    port,
 		Handler: mux,

@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"log"
@@ -16,15 +15,15 @@ const (
 )
 
 var Upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool { return true },
+	//CheckOrigin: func(r *http.Request) bool { return true },
 }
 
-// WsHandler находит/создает комнату по roomId, запускает ws коннект пользователя с лайфтаймом
+// WsHandler find/create room, start user worker
 func WsHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		conn, err := createWSConnection(w, r)
 		if err != nil {
-			log.Println("не удалось открыть wsConnection")
+			log.Printf("cant createWSConnection: %s", err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -32,19 +31,19 @@ func WsHandler() func(http.ResponseWriter, *http.Request) {
 		roomId := r.URL.Query().Get("roomId")
 		userId := uuid.New().String()
 
-		log.Printf("инициирован новый ws, userId: %s, urlRoomId %s", userId, roomId)
+		log.Printf("create new ws, userId: %s, urlRoomId %s\n", userId, roomId)
 
 		room, err := services.GetRoom(roomId)
 		if err != nil {
-			fmt.Printf("не удалось получить комнату для roomId %s\n", roomId)
+			log.Printf("cant get room for roomId %s\n", roomId)
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
 
-		//конекшн закрывает сам user, тут просто на всякий. если conn уже закрыт, будет ошибка, но нам похеру
+		//conn will be closed when user socket is closed. this is just in case, so we skip the error
 		defer func() {
 			_ = conn.Close()
-			log.Println("WsHandler задеферил conn.Close()")
+			log.Println("WsHandler defer conn.Close()")
 		}()
 
 		userLifeTimeCtx, cancel := context.WithTimeout(context.TODO(), _userLifetime)
@@ -55,10 +54,9 @@ func WsHandler() func(http.ResponseWriter, *http.Request) {
 }
 
 func createWSConnection(w http.ResponseWriter, r *http.Request) (*websocket.Conn, error) {
-	//поднимаем WebSocket-соединение
 	conn, err := Upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		return nil, fmt.Errorf("ошибка подключения WebSocket: %w", err)
+		return nil, err
 	}
 
 	return conn, nil
