@@ -15,7 +15,7 @@ const (
 )
 
 var Upgrader = websocket.Upgrader{
-	//CheckOrigin: func(r *http.Request) bool { return true },
+	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
 // WsHandler find/create room, start user worker
