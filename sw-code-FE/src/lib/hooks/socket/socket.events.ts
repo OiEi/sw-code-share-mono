@@ -6,4 +6,6 @@ export const enum Events {
     RoomUsersCount,
 
     EmergencyEvent = 911,
+
+    PingEvent = 8888
 }

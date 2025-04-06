@@ -1,35 +1,33 @@
-import {Tasks} from "@/components/tasks/tasks.model.ts";
-import {TabItem} from "../ui/tabs/tabs.model";
-import {Tabs} from "@/components/ui/tabs/ui.tsx";
-import {TaskCategory} from "@/components/tasks/ui.category.tsx";
+import { Tasks } from '@/components/tasks/tasks.model.ts';
+import { TabItem } from '../ui/tabs/tabs.model';
+import { Tabs } from '@/components/ui/tabs/ui.tsx';
+import { TaskCategory } from '@/components/tasks/ui.category.tsx';
 
 interface TasksProps {
     data: Tasks;
-    setText: (code: string) => void;
 }
 
-export const Tasks = ({data, setText}: TasksProps) => {
-    if (!data) {
-        return null;
-    }
+export const Tasks = ({ data }: TasksProps) => {
+  if (!data) {
+    return null;
+  }
 
-    const tabs: TabItem[] = Object.entries(data).map(([language, categories]) => ({
-        label: language,
-        id: language,
-        content: (
-            <div className="space-y-2">
-                {Object.entries(categories).map(([categoryName, tasks]) => (
-                    <TaskCategory
-                        setText={setText}
-                        language={language}
-                        key={`${language}-${categoryName}`}
-                        categoryName={categoryName}
-                        tasks={tasks}
-                    />
-                ))}
-            </div>
-        )
-    }));
+  const tabs: TabItem[] = Object.entries(data).map(([language, categories]) => ({
+    label: language,
+    id: language,
+    content: (
+      <div className='space-y-2'>
+        {Object.entries(categories).map(([categoryName, tasks]) => (
+          <TaskCategory
+            language={language}
+            key={`${language}-${categoryName}`}
+            categoryName={categoryName}
+            tasks={tasks}
+          />
+        ))}
+      </div>
+    )
+  }));
 
-    return <Tabs tabs={tabs} className="h-full"/>;
+  return <Tabs tabs={tabs} className='h-full'/>;
 };

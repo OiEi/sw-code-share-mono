@@ -14,4 +14,4 @@ type Tasks = {
     [language: string]: LanguageCategory;
 }
 
-export type { Tasks, LanguageCategory, CodeSlice }
+export type { Tasks, LanguageCategory, CodeSlice };

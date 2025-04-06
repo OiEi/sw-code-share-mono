@@ -7,20 +7,20 @@ interface CodeBlockProps {
 }
 
 export const CodeBlock = ({ code, language = 'go' }: CodeBlockProps) => {
-    return (
-        <SyntaxHighlighter
-            language={language}
-            style={dracula}
-            showLineNumbers={true}
-            wrapLines={true}
-            customStyle={{
-                borderRadius: '8px',
-                padding: '16px',
-                fontSize: '14px',
-                lineHeight: '1.5',
-            }}
-        >
-            {code}
-        </SyntaxHighlighter>
-    );
+  return (
+    <SyntaxHighlighter
+      language={language}
+      style={dracula}
+      showLineNumbers={true}
+      wrapLines={true}
+      customStyle={{
+        borderRadius: '8px',
+        padding: '16px',
+        fontSize: '14px',
+        lineHeight: '1.5',
+      }}
+    >
+      {code}
+    </SyntaxHighlighter>
+  );
 };
