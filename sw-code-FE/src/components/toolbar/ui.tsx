@@ -5,7 +5,7 @@ import { usePageContext } from '@/lib/hooks/useContext.ts';
 
 export const ToolBar = () => {
   const ctx = usePageContext();
-    
+
   return (
     <div
       className={`flex gap-4 justify-start text-[16px] p-2 ${ctx.theme.themeHeader.headerBackground} rounded-t-xl`}>
@@ -34,7 +34,11 @@ export const ToolBar = () => {
         options={themes.map(t => ({ value: t.value, label: t.label }))}
         currentTheme={ctx.theme}
         defaultValue={ctx.theme.value}
-        onChange={(v) => ctx.setTheme(themes.find(t => t.value === v) || themes[0])}
+        onChange={(v) => ctx.setTheme({
+          ...ctx.theme,
+          ...themes.find(t => t.value === v) || themes[0]
+        })
+        }
       />
     </div>
   );

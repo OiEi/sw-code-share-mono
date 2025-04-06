@@ -1,14 +1,14 @@
-import { useWebsocket } from '@/lib/hooks/socket/useWebsocket.ts';
-import { getFullWsRoute, ROUTES } from '@/lib/constant/api.routes.ts';
 import { useSearchParams } from 'react-router-dom';
-import { ReactNode, useCallback, useState } from 'react';
-
-import { PageContext, getCtx } from '@/lib/context/page/context.ts';
+import { ReactNode, useCallback, useMemo, useState } from 'react';
+import { getFullWsRoute, ROUTES } from '@/lib/constant/api.routes.ts';
 import { PageSettings } from '@/components/toolbar/page-settings.ts';
-import { themes } from '@/lib/theme/theme.ts';
 import { Theme } from '@/lib/theme/theme.type.ts';
+import { themes } from '@/lib/theme/theme.ts';
+import { useWebsocket } from '@/lib/hooks/socket/useWebsocket.ts';
 import { useDebouncedCallback } from '@/lib/hooks/useDebounce.ts';
 import { Events } from '@/lib/hooks/socket/socket.events.ts';
+import { PageContext } from '@/lib/context/page/context.ts';
+import { PageCtx } from '@/lib/context/page/context.model.ts';
 
 export const PageLayout = ({ children }: { children: ReactNode }) => {
   const [searchParams] = useSearchParams();
@@ -20,7 +20,7 @@ export const PageLayout = ({ children }: { children: ReactNode }) => {
     language: 'go',
     font: '12'
   });
-  const [theme, setTheme] = useState(themes[0]);
+  const [theme, setTheme] = useState<Theme>({ ...themes[0] });
 
   const { socketRef } = useWebsocket(
     websocketUrl,
@@ -35,23 +35,37 @@ export const PageLayout = ({ children }: { children: ReactNode }) => {
         type: Events.TextMessage,
         message: text
       }));
-      console.log('Sent debounced update:', text.length, 'chars');
     }
   }, 500);
 
-  const pageCtx = getCtx(
+  const stableSetters = useMemo(() => ({
+    setPageSettings,
+    setTheme: (newTheme: Theme) => {
+      console.log('Updating theme to:', newTheme);
+      setTheme({ ...newTheme });
+    },
+    setPeopleCount,
+    setRawText,
+    sendText
+  }), [sendText]);
+
+  const pageCtx: PageCtx = useMemo(() => ({
+    ...stableSetters,
+    socket: socketRef,
+    roomIdForCopy,
+    rawText,
+    peopleCount,
+    pageSettings,
+    theme
+  }), [
+    stableSetters,
     socketRef,
     roomIdForCopy,
     rawText,
     peopleCount,
     pageSettings,
-    (ps: PageSettings) => setPageSettings(ps),
-    theme,
-    (t: Theme) => setTheme(t),
-    (c: number) => setPeopleCount(c),
-    (t:string) => setRawText(t),
-    sendText
-  );
+    theme
+  ]);
 
   return (
     <PageContext.Provider value={pageCtx}>
