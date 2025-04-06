@@ -42,7 +42,7 @@ export function useWebsocket(
       setRoomIdForCopy(roomId);
       const newSearchParams = new URLSearchParams();
       newSearchParams.set('roomId', roomId);
-      // setSearchParams(newSearchParams);
+      setSearchParams(newSearchParams);
     };
 
     socket.onopen = onOpen(handlePing);
@@ -56,7 +56,7 @@ export function useWebsocket(
         socketRef.current.close();
       }
     };
-  }, [websocketUrl]); // Зависимость только от websocketUrl
+  }, []); // Зависимость только от websocketUrl
 
   return { socketRef };
 }
