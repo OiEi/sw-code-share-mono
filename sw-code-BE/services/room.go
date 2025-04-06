@@ -6,7 +6,10 @@ import (
 	"log"
 	"strconv"
 	"sync"
+	"time"
 )
+
+const _roomLifetime = 2*time.Hour + 30*time.Minute
 
 // это можно хранить в БД
 var (
@@ -28,10 +31,10 @@ type Room struct {
 	ContentMux *sync.Mutex //бездумно прекрыл жёпу, по факту на 1 экземпляр Room крутится 1 рутинка, так что рейса не должно быть
 }
 
-func GetRoom(ctx context.Context, roomId string) (*Room, error) {
+func GetRoom(roomId string) (*Room, error) {
 	if len(roomId) == 0 {
 		log.Println("roomId is empty, create a new room")
-		return createRoom(ctx), nil
+		return createRoom(), nil
 	}
 
 	roomsMutex.Lock()
@@ -40,17 +43,20 @@ func GetRoom(ctx context.Context, roomId string) (*Room, error) {
 
 	if !ok {
 		log.Printf("комната с Id %s не найдена, создаем новую", roomId)
-		return createRoom(ctx), nil
+		return createRoom(), nil
 	}
 
 	return room, nil
 }
 
-func (room *Room) start(ctx context.Context) {
+func (room *Room) start() {
+	ctx, cancelRoom := context.WithTimeout(context.TODO(), _roomLifetime)
+	defer cancelRoom()
+
 	for {
 		select {
 		case <-ctx.Done():
-			log.Printf("room %s lifetime exeeded\n", room.Id)
+			log.Printf("room %s ctx.Done\n", room.Id)
 			return
 
 		case user := <-room.Register:
@@ -130,7 +136,7 @@ func (room *Room) changeRoomUsersCount(value countChangeType) {
 	room.UsersCountMutex.Unlock()
 }
 
-func createRoom(ctx context.Context) *Room {
+func createRoom() *Room {
 	roomID := uuid.New().String()
 	room := Room{
 		Id:              roomID,
@@ -146,6 +152,6 @@ func createRoom(ctx context.Context) *Room {
 	rooms[roomID] = &room
 	roomsMutex.Unlock()
 
-	go room.start(ctx) // рутина отработает когда комната опустеет (или по котексту)
+	go room.start() // рутина отработает когда комната опустеет (или по котексту)
 	return &room
 }

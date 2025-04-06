@@ -12,7 +12,6 @@ import (
 )
 
 const (
-	_roomLifetime = 2*time.Hour + 30*time.Minute
 	_userLifetime = 2 * time.Hour
 )
 
@@ -20,7 +19,7 @@ var Upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
-// WsHandler назначает room пользователю и открывает websocket соединение в рамках комнаты
+// WsHandler находит/создает комнату по roomId, запускает ws коннект пользователя с лайфтаймом
 func WsHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		conn, err := createWSConnection(w, r)
@@ -35,10 +34,7 @@ func WsHandler() func(http.ResponseWriter, *http.Request) {
 
 		log.Printf("инициирован новый ws, userId: %s, urlRoomId %s", userId, roomId)
 
-		roomCtx, cancelRoom := context.WithTimeout(context.TODO(), _roomLifetime)
-		defer cancelRoom()
-
-		room, err := services.GetRoom(roomCtx, roomId)
+		room, err := services.GetRoom(roomId)
 		if err != nil {
 			fmt.Printf("не удалось получить комнату для roomId %s\n", roomId)
 			http.Error(w, err.Error(), http.StatusNotFound)
@@ -51,7 +47,7 @@ func WsHandler() func(http.ResponseWriter, *http.Request) {
 			log.Println("WsHandler задеферил conn.Close()")
 		}()
 
-		userLifeTimeCtx, cancel := context.WithTimeout(roomCtx, _userLifetime)
+		userLifeTimeCtx, cancel := context.WithTimeout(context.TODO(), _userLifetime)
 		defer cancel()
 
 		services.HandleUser(userLifeTimeCtx, room, conn, services.UserId(userId))
