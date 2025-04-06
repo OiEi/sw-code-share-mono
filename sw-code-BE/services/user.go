@@ -69,7 +69,7 @@ func HandleUser(ctx context.Context, room *Room, conn *websocket.Conn, userId Us
 func (u *User) subscribeToIncomingMessages(room *Room) {
 	u.IsSocketOpen.Store(true)
 
-	go func() { //room will close IncomingMessages after room.Unregister <- user
+	go func() {
 		for msg := range u.IncomingMessages {
 			if len(msg.Message) == 0 {
 				continue
