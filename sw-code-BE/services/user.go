@@ -86,8 +86,6 @@ func (u *User) subscribeToIncomingMessages(room *Room) {
 				return
 			}
 		}
-
-		room.unregisterUser(*u)
 	}()
 }
 

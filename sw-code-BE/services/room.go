@@ -6,10 +6,18 @@ import (
 	"log"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
 const _roomLifetime = 2*time.Hour + 30*time.Minute
+
+type countChangeType int
+
+var (
+	increaseCount = countChangeType(1)
+	decreaseCount = countChangeType(-1)
+)
 
 // это можно хранить в БД
 var (
@@ -19,10 +27,9 @@ var (
 
 // Room запускает рутину-воркер которая регает/удаляет пользователей, бродкастит сообщения между пользователями
 type Room struct {
-	Id              string
-	Users           map[UserId]User //ключом наверное лучше сделать User.Id
-	UsersCountMutex *sync.Mutex
-	UsersCount      int
+	Id         string
+	Users      map[UserId]User //ключом наверное лучше сделать User.Id
+	UsersCount *atomic.Int32
 	//UsersCount chan int
 	Broadcast  chan WsRequest
 	Register   chan User
@@ -110,7 +117,7 @@ func (room *Room) registerUser(user User) {
 
 	room.Register <- user
 	room.changeRoomUsersCount(increaseCount)
-	room.Broadcast <- NewWsRequest(RoomUsersCount, strconv.Itoa(room.UsersCount))
+	room.Broadcast <- NewWsRequest(RoomUsersCount, strconv.Itoa(int(room.UsersCount.Load())))
 }
 
 func (room *Room) unregisterUser(user User) {
@@ -120,32 +127,23 @@ func (room *Room) unregisterUser(user User) {
 
 	room.changeRoomUsersCount(decreaseCount)
 	room.Unregister <- user
-	room.Broadcast <- NewWsRequest(RoomUsersCount, strconv.Itoa(room.UsersCount))
+	room.Broadcast <- NewWsRequest(RoomUsersCount, strconv.Itoa(int(room.UsersCount.Load())))
 }
 
-type countChangeType int
-
-var (
-	increaseCount = countChangeType(1)
-	decreaseCount = countChangeType(-1)
-)
-
 func (room *Room) changeRoomUsersCount(value countChangeType) {
-	room.UsersCountMutex.Lock()
-	room.UsersCount += int(value)
-	room.UsersCountMutex.Unlock()
+	room.UsersCount.Add(int32(value))
 }
 
 func createRoom() *Room {
 	roomID := uuid.New().String()
 	room := Room{
-		Id:              roomID,
-		Users:           make(map[UserId]User),
-		UsersCountMutex: &sync.Mutex{},
-		ContentMux:      &sync.Mutex{},
-		Broadcast:       make(chan WsRequest),
-		Register:        make(chan User),
-		Unregister:      make(chan User),
+		Id:         roomID,
+		Users:      make(map[UserId]User),
+		UsersCount: &atomic.Int32{},
+		ContentMux: &sync.Mutex{},
+		Broadcast:  make(chan WsRequest),
+		Register:   make(chan User),
+		Unregister: make(chan User),
 	}
 
 	roomsMutex.Lock()
