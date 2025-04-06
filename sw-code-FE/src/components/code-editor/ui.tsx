@@ -1,7 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
-
-import { PageSettings } from '@/components/toolbar/page-settings.ts';
-import { Theme } from '@/lib/theme/theme.type.ts';
+import { useEffect, useState } from 'react';
 
 import Prism from 'prismjs';
 
@@ -13,6 +10,10 @@ import 'prismjs/themes/prism-tomorrow.css';
 
 import 'prismjs/components/prism-go';
 import 'prismjs/components/prism-csharp';
+import 'prismjs/components/prism-kotlin';
+import 'prismjs/components/prism-sql';
+import 'prismjs/components/prism-swift';
+import 'prismjs/components/prism-python';
 
 import '@/lib/theme/index.css';
 
@@ -33,6 +34,14 @@ export const CodeEditor = () => {
       return Prism.highlight(code, Prism.languages.go, 'go');
     case 'csharp':
       return Prism.highlight(code, Prism.languages.csharp, 'csharp');
+    case 'kotlin':
+      return Prism.highlight(code, Prism.languages.kotlin, 'kotlin');
+    case 'sql':
+      return Prism.highlight(code, Prism.languages.sql, 'sql');
+    case 'python':
+      return Prism.highlight(code, Prism.languages.python, 'python');
+    case 'swift':
+      return Prism.highlight(code, Prism.languages.swift, 'swift');
     case 'javascript':
     default:
       return Prism.highlight(code, Prism.languages.javascript, 'javascript');
