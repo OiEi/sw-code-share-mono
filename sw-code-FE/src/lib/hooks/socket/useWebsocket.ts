@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { handleFn } from '@/lib/types/handle.ts';
 import { onClose, onError, onMessage, onOpen } from '@/lib/hooks/socket/socket.ts';
-import {Events} from "@/lib/hooks/socket/socket.events.ts";
+import { Events } from '@/lib/hooks/socket/socket.events.ts';
 
 export function useWebsocket(
   websocketUrl: string,
@@ -38,8 +38,15 @@ export function useWebsocket(
       }, 25000);
     };
 
+    const handleSetRoomId = (roomId: string) => {
+      setRoomIdForCopy(roomId);
+      const newSearchParams = new URLSearchParams();
+      newSearchParams.set('roomId', roomId);
+      setSearchParams(newSearchParams);
+    };
+
     socket.onopen = onOpen(handlePing);
-    socket.onmessage = onMessage(setRoomIdForCopy, setRawText, setPeopleCount);
+    socket.onmessage = onMessage(handleSetRoomId, setRawText, setPeopleCount);
     socket.onclose = onClose(() => handleDisconnect());
     socket.onerror = onError;
 

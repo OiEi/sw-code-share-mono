@@ -12,7 +12,6 @@ export const onMessage = (
       const data = JSON.parse<OnMessageEvent>(event.data);
 
       if (data.type === Events.TextMessage) {
-        console.log(123);
         setText(data.message);
       }
 
