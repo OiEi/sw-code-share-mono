@@ -21,7 +21,6 @@ var Upgrader = websocket.Upgrader{
 // WsHandler find/create room, start user worker
 func WsHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(200)
 		roomId := r.URL.Query().Get("roomId")
 		userId := uuid.New().String()
 
