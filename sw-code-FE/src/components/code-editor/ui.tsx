@@ -49,7 +49,7 @@ export const CodeEditor = () => {
   };
 
   const renderLineNumbers = () => {
-    const lines = ctx.rawText.split('\n');
+    const lines = ctx.rawText.split('\n').length;
     const padding = lines > 100 ? '2px' : lines > 10 ? '6px' : '10px';
     return (
       <div
