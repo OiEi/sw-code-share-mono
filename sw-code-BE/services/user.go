@@ -23,7 +23,7 @@ type User struct {
 }
 
 func NewUser(ctx context.Context, id UserId, isAuthorize bool, conn *websocket.Conn) *User {
-	return &User{
+	user := &User{
 		Id:               id,
 		IsAuthorizedUser: isAuthorize,
 		Ctx:              ctx,
@@ -32,6 +32,10 @@ func NewUser(ctx context.Context, id UserId, isAuthorize bool, conn *websocket.C
 		done:             make(chan struct{}),
 		socket:           conn,
 	}
+
+	user.socket.SetReadLimit(1024 * 1024) //1мб по ws макс, затем разрывает conn
+
+	return user
 }
 
 func (u *User) Handle(room *Room) {
@@ -58,6 +62,11 @@ func (u *User) Handle(room *Room) {
 			return
 		default:
 			err := user.socket.ReadJSON(&message)
+			if websocket.IsCloseError(err, websocket.CloseMessageTooBig) {
+				log.Printf("сonnection closed: message too big: %v", err)
+				return
+			}
+
 			if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("user %s closed the connection: %s\n", user.Id, err)
 				err = user.Stop()
