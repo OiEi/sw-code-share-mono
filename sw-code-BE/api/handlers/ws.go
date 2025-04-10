@@ -18,24 +18,25 @@ var Upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
-// WsHandler find/create room, start user worker
+// WsHandler find room, start user worker
 func WsHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		roomId := r.URL.Query().Get("roomId")
-		userId := uuid.New().String()
+		var (
+			roomId       = r.URL.Query().Get("roomId")
+			userId       = uuid.New().String()
+			isAuthorized = false
+		)
 
 		log.Printf("create new ws, userId: %s, urlRoomId %s\n", userId, roomId)
 
 		room, err := services.GetRoom(roomId)
 		if err != nil {
-			log.Printf("cant get room for roomId %s\n", roomId)
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
 
 		conn, err := createWSConnection(w, r)
 		if err != nil {
-			log.Printf("cant createWSConnection: %s", err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -49,7 +50,37 @@ func WsHandler() func(http.ResponseWriter, *http.Request) {
 		userLifeTimeCtx, cancel := context.WithTimeout(context.TODO(), _userLifetime)
 		defer cancel()
 
-		services.HandleUser(userLifeTimeCtx, room, conn, services.UserId(userId))
+		services.NewUser(userLifeTimeCtx, services.UserId(userId), isAuthorized, conn).Handle(room)
+	}
+}
+
+// WsAuthHandler create room, start user worker
+func WsAuthHandler() func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var (
+			userId       = uuid.New().String()
+			room         = services.CreateRoom()
+			isAuthorized = true
+		)
+
+		log.Printf("create new room %s, userId: %s\n", userId, room.Id)
+
+		conn, err := createWSConnection(w, r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		//conn will be closed when user socket is closed. this is just in case, so we skip the error
+		defer func() {
+			_ = conn.Close()
+			log.Println("WsHandler defer conn.Close()")
+		}()
+
+		userLifeTimeCtx, cancel := context.WithTimeout(context.TODO(), _userLifetime)
+		defer cancel()
+
+		services.NewUser(userLifeTimeCtx, services.UserId(userId), isAuthorized, conn).Handle(room)
 	}
 }
 
