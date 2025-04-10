@@ -50,7 +50,7 @@ export const CodeEditor = () => {
 
   const renderLineNumbers = () => {
     const lines = ctx.rawText.split('\n');
-    const padding = lines.length > 100 ? 2 : lines.length > 10 ? 6 : 10;
+    const padding = lines > 100 ? '2px' : lines > 10 ? '6px' : '10px';
     return (
       <div
         className={`${ctx.theme.editorBg} ${ctx.theme.editorText} prism-${ctx.theme.value}`}
@@ -65,9 +65,9 @@ export const CodeEditor = () => {
           color: '#999',
           userSelect: 'none',
           textAlign: 'right',
-          paddingRight: `${padding / 2}px`,
+          paddingRight: padding / 2,
           borderRight: '1px solid #ddd',
-          paddingLeft: `${padding * 2}px`,
+          paddingLeft: padding * 2,
           backgroundColor: ctx.theme.editorBg,
           borderBottomLeftRadius: '2rem',
           borderBottomRightRadius: '2rem'
