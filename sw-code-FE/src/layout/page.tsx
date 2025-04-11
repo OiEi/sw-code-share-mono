@@ -9,6 +9,7 @@ import { useDebouncedCallback } from '@/lib/hooks/useDebounce.ts';
 import { Events } from '@/lib/hooks/socket/socket.events.ts';
 import { PageContext } from '@/lib/context/page/context.ts';
 import { PageCtx } from '@/lib/context/page/context.model.ts';
+import { resizeText } from '@/lib/strings/formatText';
 
 export const PageLayout = ({ children }: { children: ReactNode }) => {
   const [searchParams] = useSearchParams();
@@ -25,7 +26,7 @@ export const PageLayout = ({ children }: { children: ReactNode }) => {
   const { socketRef } = useWebsocket(
     websocketUrl,
     useCallback((id: string) => setRoomIdForCopy(id), []),
-    useCallback((text: string) => setRawText(text), []),
+    useCallback((text: string) => setRawText(resizeText(text)), []),
     useCallback((count: number) => setPeopleCount(count), [])
   );
 
@@ -33,7 +34,7 @@ export const PageLayout = ({ children }: { children: ReactNode }) => {
     if (socketRef.current?.readyState === WebSocket.OPEN) {
       socketRef.current.send(JSON.stringify({
         type: Events.TextMessage,
-        message: text
+        message: resizeText(text)
       }));
     }
   }, 500);

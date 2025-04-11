@@ -39,21 +39,36 @@ type Room struct {
 }
 
 func GetRoom(roomId string) (*Room, error) {
-	if len(roomId) == 0 {
-		log.Println("roomId is empty, create a new room")
-		return createRoom(), nil
-	}
-
 	roomsMutex.Lock()
 	room, ok := rooms[roomId]
 	roomsMutex.Unlock()
 
 	if !ok {
-		log.Printf("комната с Id %s не найдена, создаем новую", roomId)
-		return createRoom(), nil
+		log.Printf("комната с Id %s не найдена", roomId)
+		return nil, ErrNotFoundRoom
 	}
 
 	return room, nil
+}
+
+func CreateRoom() *Room {
+	roomID := uuid.New().String()
+	room := Room{
+		Id:         roomID,
+		Users:      make(map[UserId]User),
+		UsersCount: &atomic.Int32{},
+		ContentMux: &sync.Mutex{},
+		Broadcast:  make(chan WsRequest),
+		Register:   make(chan User),
+		Unregister: make(chan User),
+	}
+
+	roomsMutex.Lock()
+	rooms[roomID] = &room
+	roomsMutex.Unlock()
+
+	go room.start() // рутина отработает когда комната опустеет (или по котексту)
+	return &room
 }
 
 func (room *Room) start() {
@@ -74,10 +89,15 @@ func (room *Room) start() {
 				continue
 			}
 
+			if user.IsAuthorizedUser {
+				log.Printf("authorized user left room, delete room %s\n", room.Id)
+				room.stop()
+				return
+			}
+
 			delete(room.Users, user.Id)
 
 		case message := <-room.Broadcast:
-
 			if len(room.Users) == 0 {
 				log.Println("попытка бродкаста в пустую комнату")
 				return // Выходим, если нет пользователей
@@ -91,22 +111,41 @@ func (room *Room) start() {
 			}
 
 			for _, user := range room.Users {
-				if !user.IsSocketOpen.Load() {
-					continue
+				if ok := user.IsSocketOpen.Load(); ok {
+					user.IncomingMessages <- message
 				}
-
-				user.IncomingMessages <- message
 			}
 		}
 
-		if len(room.Users) == 0 {
+		//TODO на всякий, можно выпилить
+		//проверяем что авторизованный пользак не ливнул
+		isRoomAuthorized := false
+		for _, user := range room.Users {
+			if user.IsAuthorizedUser {
+				isRoomAuthorized = true
+			}
+		}
+
+		if !isRoomAuthorized || len(room.Users) == 0 {
 			log.Printf("room was empty, delete room %s\n", room.Id)
-			roomsMutex.Lock()
-			delete(rooms, room.Id)
-			roomsMutex.Unlock()
+			room.stop()
 			return
 		}
 	}
+}
+
+func (room *Room) stop() {
+	for _, user := range room.Users {
+		err := user.Stop()
+		if err != nil {
+			log.Printf("cant stop user %s, %s\n", user.Id, err)
+		}
+	}
+
+	roomsMutex.Lock()
+	delete(rooms, room.Id)
+	roomsMutex.Unlock()
+	return
 }
 
 func (room *Room) registerUser(user User) {
@@ -133,24 +172,4 @@ func (room *Room) unregisterUser(user User) {
 
 func (room *Room) changeRoomUsersCount(value countChangeType) {
 	room.UsersCount.Add(int32(value))
-}
-
-func createRoom() *Room {
-	roomID := uuid.New().String()
-	room := Room{
-		Id:         roomID,
-		Users:      make(map[UserId]User),
-		UsersCount: &atomic.Int32{},
-		ContentMux: &sync.Mutex{},
-		Broadcast:  make(chan WsRequest),
-		Register:   make(chan User),
-		Unregister: make(chan User),
-	}
-
-	roomsMutex.Lock()
-	rooms[roomID] = &room
-	roomsMutex.Unlock()
-
-	go room.start() // рутина отработает когда комната опустеет (или по котексту)
-	return &room
 }
