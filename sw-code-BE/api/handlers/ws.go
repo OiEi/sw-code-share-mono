@@ -57,8 +57,6 @@ func WsHandler() func(http.ResponseWriter, *http.Request) {
 // WsAuthHandler create room, start user worker
 func WsAuthHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		return
-
 		var (
 			userId       = uuid.New().String()
 			room         = services.CreateRoom()
